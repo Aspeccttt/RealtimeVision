@@ -21,9 +21,4 @@ public class DataHandler : MonoBehaviour
             Debug.Log($"X: {item.x}, Y: {item.y}, Z: {item.z}");
         }
     }
-
-    void Update()
-    {
-        
-    }
 }

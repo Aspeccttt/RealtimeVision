@@ -1,15 +1,21 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using TMPro;
 using UnityEngine;
 
 public class CSVreader : MonoBehaviour
 {
+    public GameObject spherePrefab;
+    public Transform plotPointsParent;
+
     private List<string> column1Data = new List<string>();
     private List<string> column2Data = new List<string>();
     private List<string> column3Data = new List<string>();
+
+    private float minX, maxX, minY, maxY, minZ, maxZ;
 
     [SerializeField]
     private TextMeshProUGUI xUI;
@@ -17,6 +23,11 @@ public class CSVreader : MonoBehaviour
     private TextMeshProUGUI yUI;
     [SerializeField]
     private TextMeshProUGUI zUI;
+
+    [SerializeField]
+    private GameObject floor;
+    Vector3 floorSize;
+
 
     [SerializeField]
     private TextAsset csvFile;
@@ -30,25 +41,33 @@ public class CSVreader : MonoBehaviour
     void Start()
     {
         uploader = GameObject.Find("GameManager").GetComponent<CSVUploader>();
+
+        floorSize = floor.GetComponent<Renderer>().bounds.size;
     }
 
     public void ReadCSVFile()
     {
+
         localURL = uploader.returnLocalURL();
-        Debug.Log("BEFORE INITALIZATION: " + localURL.ToString());
-        string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, localURL.ToString()));
+        Debug.Log("BEFORE INITIALIZATION: " + localURL);
+        string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, localURL));
 
         // Parse the first line to get column titles
         string[] titles = lines[0].Split(',');
-        //Saving the titles into variables.
+        // Saving the titles into variables.
         column1Title = titles[0];
         column2Title = titles[1];
         column3Title = titles[2];
 
-        //Setting the titles.
+        // Setting the titles on UI.
         UpdateXText("X: " + column1Title);
-        UpdateYText("Y: " + column2Title); 
+        UpdateYText("Y: " + column2Title);
         UpdateZText("Z: " + column3Title);
+
+        // Clear previous data if necessary
+        column1Data.Clear();
+        column2Data.Clear();
+        column3Data.Clear();
 
         // Start from the second line to read data
         for (int i = 1; i < lines.Length; i++)
@@ -58,12 +77,81 @@ public class CSVreader : MonoBehaviour
             // Assuming each row has exactly 3 columns
             if (row.Length >= 3)
             {
+                // Directly add Time and Weather as they are string values
                 column1Data.Add(row[0]);
                 column2Data.Add(row[1]);
-                column3Data.Add(row[2]);
+
+                // Try parsing the Intensity as a float, and store as a string for now
+                // Consider storing in a separate float list if needed for numeric operations
+                float intensityValue;
+                bool isParsed = float.TryParse(row[2], NumberStyles.Any, CultureInfo.InvariantCulture, out intensityValue);
+                if (isParsed)
+                {
+                    // If you need to use intensityValue as a float, consider adding to a separate float list
+                    column3Data.Add(intensityValue.ToString(CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    // Handle parsing failure if necessary, e.g., log error, use a default value, etc.
+                    Debug.LogError($"Failed to parse Intensity for row {i}: {row[2]}");
+                    column3Data.Add("0"); // Adding a default value or you could skip adding
+                }
             }
         }
+
+        // Assuming InstantiateDataPoints is adapted to handle string and numeric data correctly
+        InstantiateDataPoints();
     }
+
+    private void InstantiateDataPoints()
+    {
+        Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
+        Vector3 floorPosition = floor.transform.position;
+
+        // Calculate bottom left position
+        Vector3 bottomLeft = new Vector3(
+            floorPosition.x - floorSize.x / 2,
+            floorPosition.y, // Adjust this based on how you're using the Y-axis
+            floorPosition.z - floorSize.z / 2
+        );
+
+        float plotPadding = 1.0f; // Add some padding to ensure plots don't touch the edges directly
+
+        // Calculate the new normalized range taking padding into account
+        float normalizedMinX = plotPadding;
+        float normalizedMaxX = floorSize.x - plotPadding;
+        float normalizedMinZ = plotPadding;
+        float normalizedMaxZ = floorSize.z - plotPadding;
+
+        for (int i = 0; i < column3Data.Count; i++)
+        {
+            float intensity = float.Parse(column3Data[i], CultureInfo.InvariantCulture);
+            minZ = Mathf.Min(minZ, intensity);
+            maxZ = Mathf.Max(maxZ, intensity);
+        }
+
+        for (int i = 0; i < column3Data.Count; i++)
+        {
+            float intensity = float.Parse(column3Data[i], CultureInfo.InvariantCulture);
+
+            // Normalize and scale X and Z within the floor bounds, starting from 0
+            float xPosition = NormalizeValue(i, 0, column3Data.Count - 1, 0, floorSize.x);
+            float zPosition = NormalizeValue(intensity, minZ, maxZ, 0, floorSize.z); // Assuming intensity determines Z-axis position
+
+            // Apply the bottom left offset to each plot position
+            Vector3 plotPosition = new Vector3(xPosition, 0, zPosition) + bottomLeft; // Adjust Y-axis as needed
+
+            // Instantiate the prefab at the calculated position
+            Instantiate(spherePrefab, plotPosition, Quaternion.identity, plotPointsParent);
+        }
+    }
+
+    private float NormalizeValue(float value, float min, float max, float normalizedMin, float normalizedMax)
+    {
+        if (max - min == 0) return normalizedMin; // Return a default value if min and max are equal
+        return (value - min) / (max - min) * (normalizedMax - normalizedMin) + normalizedMin;
+    }
+
 
     public void UpdateZText(string text)
     {
