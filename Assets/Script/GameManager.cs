@@ -12,6 +12,12 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI zUI;
 
+    //UI
+    public GameObject waitingUIPanel;
+    public GameObject uploadedUIPanel;
+    public GameObject menuPanel;
+
+
     public static GameManager Instance { get; private set; }
 
     void Awake()
@@ -25,6 +31,22 @@ public class GameManager : MonoBehaviour
         Instance = this;
 
         DontDestroyOnLoad(gameObject);
+    }
+    void Update()
+    {
+        // Check for the ESC key press to toggle the menu
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ToggleMenu();
+        }
+    }
+
+    /// <summary>
+    /// Toggle the menu's visibility.
+    /// </summary>
+    public void ToggleMenu()
+    {
+        menuPanel.SetActive(!menuPanel.activeSelf);
     }
 
     /// <summary>
@@ -53,5 +75,11 @@ public class GameManager : MonoBehaviour
         {
             xUI.text = text;
         }
+    }
+
+    public void CSVLoaded()
+    {
+        waitingUIPanel.SetActive(false);
+        uploadedUIPanel.SetActive(true);
     }
 }

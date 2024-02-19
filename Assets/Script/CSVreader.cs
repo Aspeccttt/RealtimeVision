@@ -31,69 +31,88 @@ public class CSVreader : MonoBehaviour
     [SerializeField]
     CSVUploader uploader;
 
+    public TMP_Dropdown xDropdown, yDropdown, zDropdown;
+    public UnityEngine.UI.Button doneButton; // Reference to the "Done" button
+
+    private List<List<string>> columnData = new List<List<string>>();
+    private List<string>[] columnDataArrays; // Array of lists to hold column data
+    private List<string> columnNames = new List<string>();
+
     void Start()
     {
         uploader = GameObject.Find("GameManager").GetComponent<CSVUploader>();
-
+        doneButton.onClick.AddListener(OnDoneButtonClick);
         floorSize = floor.GetComponent<Renderer>().bounds.size;
     }
 
     public void ReadCSVFile()
     {
+        string filePath = uploader.returnLocalURL();
 
-        localURL = uploader.returnLocalURL();
-        Debug.Log("BEFORE INITIALIZATION: " + localURL);
-        string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, localURL));
-
-        // Parse the first line to get column titles
-        string[] titles = lines[0].Split(',');
-        // Saving the titles into variables.
-        column1Title = titles[0];
-        column2Title = titles[1];
-        column3Title = titles[2];
-
-        // Setting the titles on UI.
-        GameManager.Instance.UpdateXText("X: " + column1Title);
-        GameManager.Instance.UpdateYText("Y: " + column2Title);
-        GameManager.Instance.UpdateZText("Z: " + column3Title);
-
-        // Clear previous data if necessary
-        column1Data.Clear();
-        column2Data.Clear();
-        column3Data.Clear();
-
-        // Start from the second line to read data
-        for (int i = 1; i < lines.Length; i++)
+        // Check if the filePath is not empty or null
+        if (string.IsNullOrEmpty(filePath))
         {
-            string[] row = lines[i].Split(',');
-
-            // Assuming each row has exactly 3 columns
-            if (row.Length >= 3)
-            {
-                // Directly add Time and Weather as they are string values
-                column1Data.Add(row[0]);
-                column2Data.Add(row[1]);
-
-                // Try parsing the Intensity as a float, and store as a string for now
-                // Consider storing in a separate float list if needed for numeric operations
-                float intensityValue;
-                bool isParsed = float.TryParse(row[2], NumberStyles.Any, CultureInfo.InvariantCulture, out intensityValue);
-                if (isParsed)
-                {
-                    // If you need to use intensityValue as a float, consider adding to a separate float list
-                    column3Data.Add(intensityValue.ToString(CultureInfo.InvariantCulture));
-                }
-                else
-                {
-                    // Handle parsing failure if necessary, e.g., log error, use a default value, etc.
-                    Debug.LogError($"Failed to parse Intensity for row {i}: {row[2]}");
-                    column3Data.Add("0"); // Adding a default value or you could skip adding
-                }
-            }
+            Debug.LogError("CSV file path is empty or not set.");
+            return; // Exit the method if the file path is invalid
         }
 
-        // Assuming InstantiateDataPoints is adapted to handle string and numeric data correctly
-        InstantiateDataPoints();
+        try
+        {
+            string[] lines = File.ReadAllLines(filePath);
+            GameManager.Instance.CSVLoaded();
+
+            string[] headers = lines[0].Split(',');
+            columnNames.Clear(); 
+            foreach (string header in headers)
+            {
+                columnNames.Add(header.Trim());
+            }
+
+            columnData.Clear();
+            for (int i = 0; i < headers.Length; i++)
+            {
+                columnData.Add(new List<string>());
+            }
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] entries = lines[i].Split(',');
+                for (int j = 0; j < entries.Length && j < columnData.Count; j++)
+                {
+                    // Add data to corresponding column list
+                    columnData[j].Add(entries[j].Trim()); 
+                }
+            }
+            PopulateDropdowns();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error reading the CSV file: {e.Message}");
+        }
+    }
+
+    void PopulateDropdowns()
+    {
+        xDropdown.ClearOptions();
+        yDropdown.ClearOptions();
+        zDropdown.ClearOptions();
+
+        xDropdown.AddOptions(columnNames);
+        yDropdown.AddOptions(columnNames);
+        zDropdown.AddOptions(columnNames);
+
+        doneButton.interactable = true;
+    }
+
+    public void OnDoneButtonClick()
+    {
+        // Update labels based on selected dropdown values
+        GameManager.Instance.UpdateXText(xDropdown.options[xDropdown.value].text);
+        GameManager.Instance.UpdateYText(yDropdown.options[yDropdown.value].text);
+        GameManager.Instance.UpdateZText(zDropdown.options[zDropdown.value].text);
+
+        // Close the menu
+        GameManager.Instance.ToggleMenu();
     }
 
     private void InstantiateDataPoints()
