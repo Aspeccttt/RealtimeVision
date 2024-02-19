@@ -18,13 +18,6 @@ public class CSVreader : MonoBehaviour
     private float minX, maxX, minY, maxY, minZ, maxZ;
 
     [SerializeField]
-    private TextMeshProUGUI xUI;
-    [SerializeField]
-    private TextMeshProUGUI yUI;
-    [SerializeField]
-    private TextMeshProUGUI zUI;
-
-    [SerializeField]
     private GameObject floor;
     Vector3 floorSize;
 
@@ -60,9 +53,9 @@ public class CSVreader : MonoBehaviour
         column3Title = titles[2];
 
         // Setting the titles on UI.
-        UpdateXText("X: " + column1Title);
-        UpdateYText("Y: " + column2Title);
-        UpdateZText("Z: " + column3Title);
+        GameManager.Instance.UpdateXText("X: " + column1Title);
+        GameManager.Instance.UpdateYText("Y: " + column2Title);
+        GameManager.Instance.UpdateZText("Z: " + column3Title);
 
         // Clear previous data if necessary
         column1Data.Clear();
@@ -145,7 +138,7 @@ public class CSVreader : MonoBehaviour
             Instantiate(spherePrefab, plotPosition, Quaternion.identity, plotPointsParent);
         }
     }
-
+        
     private float NormalizeValue(float value, float min, float max, float normalizedMin, float normalizedMax)
     {
         if (max - min == 0) return normalizedMin; // Return a default value if min and max are equal
@@ -153,29 +146,6 @@ public class CSVreader : MonoBehaviour
     }
 
 
-    public void UpdateZText(string text)
-    {
-        if (zUI != null)
-        {
-            zUI.text = text;
-        }
-    }
-
-    public void UpdateYText(string text)
-    {
-        if (yUI != null)
-        {
-            yUI.text = text;
-        }
-    }
-
-    public void UpdateXText(string text)
-    {
-        if (xUI != null)
-        {
-            xUI.text = text;
-        }
-    }
 
     /// <summary>
     /// Used for debugging purposes.
