@@ -1,10 +1,14 @@
+#region Unity Imports
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+#endregion
+
 
 public class GameManager : MonoBehaviour
 {
+    #region Global Variables
     [SerializeField]
     private TextMeshProUGUI xUI;
     [SerializeField]
@@ -17,7 +21,13 @@ public class GameManager : MonoBehaviour
     public GameObject uploadedUIPanel;
     public GameObject menuPanel;
 
+    public bool IsCSVUploaded = false;
 
+
+    [SerializeField] TextMeshProUGUI menuCondition;
+    #endregion
+
+    #region Singleton
     public static GameManager Instance { get; private set; }
 
     void Awake()
@@ -32,6 +42,9 @@ public class GameManager : MonoBehaviour
 
         DontDestroyOnLoad(gameObject);
     }
+    #endregion
+
+    #region Unity Lifecycle
     void Update()
     {
         // Check for the ESC key press to toggle the menu
@@ -41,6 +54,17 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        if (!IsCSVUploaded)
+        {
+            menuCondition.text = "No uploaded CSV, please upload by pressing the button!";
+        }
+        else { menuCondition.text = ""; }
+    }
+    #endregion
+
+    #region Main Menu Controller
     /// <summary>
     /// Toggle the menu's visibility.
     /// </summary>
@@ -49,8 +73,22 @@ public class GameManager : MonoBehaviour
         menuPanel.SetActive(!menuPanel.activeSelf);
     }
 
+    public void changeMenuCondition(string Text)
+    {
+        menuCondition.text = Text;
+    }
+
+    public void CSVLoaded()
+    {
+        waitingUIPanel.SetActive(false);
+        uploadedUIPanel.SetActive(true);
+    }
+    #endregion
+
+    #region SceneWorld Scripts
+
     /// <summary>
-    /// These methods are just to update the text for the UI.
+    /// These methods are just to update the text for the UI in the world.
     /// </summary>
     /// <param name="text"></param>
     public void UpdateZText(string text)
@@ -76,10 +114,6 @@ public class GameManager : MonoBehaviour
             xUI.text = text;
         }
     }
+    #endregion
 
-    public void CSVLoaded()
-    {
-        waitingUIPanel.SetActive(false);
-        uploadedUIPanel.SetActive(true);
-    }
 }

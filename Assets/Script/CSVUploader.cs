@@ -1,17 +1,23 @@
+#region Unity Imports
 using UnityEngine;
 using System.IO;
 using UnityEditor;
 using System.Collections;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+#endregion
+
 
 public class CSVUploader : MonoBehaviour
 {
-    string path;
-    public RawImage rawImage;
+    #region Global Variables
+        string path;
+        public RawImage rawImage;
 
-    CSVreader reader;
+        CSVreader reader;
+    #endregion
 
+    #region Handler
     public void OpenFileExplorer()
     {
         path = EditorUtility.OpenFilePanel("Show all images (.csv)", "", "csv");
@@ -27,9 +33,11 @@ public class CSVUploader : MonoBehaviour
         if (www.isNetworkError || www.isHttpError)
         {
             Debug.Log(www.error);
-        }else
+        }
+        else
         {
             Debug.Log(path.ToString());
+            GameManager.Instance.IsCSVUploaded = true;
             ReaderCall();
             StopAllCoroutines();
         }
@@ -43,7 +51,6 @@ public class CSVUploader : MonoBehaviour
     }
 
     public string returnLocalURL()
-    {
-        return path;
-    }
+    {return path;}
+    #endregion
 }

@@ -1,3 +1,4 @@
+#region Unity Imports
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,9 +6,11 @@ using System.Globalization;
 using System.IO;
 using TMPro;
 using UnityEngine;
+#endregion
 
 public class CSVreader : MonoBehaviour
 {
+    #region Global Variables
     public GameObject spherePrefab;
     public Transform plotPointsParent;
 
@@ -23,7 +26,6 @@ public class CSVreader : MonoBehaviour
 
 
     [SerializeField]
-    private TextAsset csvFile;
     public string localURL;
 
     private string column1Title, column2Title, column3Title;
@@ -37,14 +39,18 @@ public class CSVreader : MonoBehaviour
     private List<List<string>> columnData = new List<List<string>>();
     private List<string>[] columnDataArrays; // Array of lists to hold column data
     private List<string> columnNames = new List<string>();
+    #endregion
 
+    #region Unity Lifecycle
     void Start()
     {
         uploader = GameObject.Find("GameManager").GetComponent<CSVUploader>();
         doneButton.onClick.AddListener(OnDoneButtonClick);
         floorSize = floor.GetComponent<Renderer>().bounds.size;
     }
+    #endregion
 
+    #region CSV File Handling
     public void ReadCSVFile()
     {
         string filePath = uploader.returnLocalURL();
@@ -62,7 +68,7 @@ public class CSVreader : MonoBehaviour
             GameManager.Instance.CSVLoaded();
 
             string[] headers = lines[0].Split(',');
-            columnNames.Clear(); 
+            columnNames.Clear();
             foreach (string header in headers)
             {
                 columnNames.Add(header.Trim());
@@ -80,7 +86,7 @@ public class CSVreader : MonoBehaviour
                 for (int j = 0; j < entries.Length && j < columnData.Count; j++)
                 {
                     // Add data to corresponding column list
-                    columnData[j].Add(entries[j].Trim()); 
+                    columnData[j].Add(entries[j].Trim());
                 }
             }
             PopulateDropdowns();
@@ -89,8 +95,26 @@ public class CSVreader : MonoBehaviour
         {
             Debug.LogError($"Error reading the CSV file: {e.Message}");
         }
+
+        //Verification:
+        Debug.Log("CSV Data Loaded:");
+        for (int i = 0; i < columnNames.Count; i++)
+        {
+            Debug.Log($"{columnNames[i]}: {string.Join(", ", columnData[i])}");
+        }
     }
 
+    public void LogCurrentSelections()
+    {
+        string xSelection = xDropdown.options[xDropdown.value].text;
+        string ySelection = yDropdown.options[yDropdown.value].text;
+        string zSelection = zDropdown.options[zDropdown.value].text;
+
+        Debug.Log($"Current Selections - X: {xSelection}, Y: {ySelection}, Z: {zSelection}");
+    }
+    #endregion
+
+    #region Menu
     void PopulateDropdowns()
     {
         xDropdown.ClearOptions();
@@ -106,90 +130,108 @@ public class CSVreader : MonoBehaviour
 
     public void OnDoneButtonClick()
     {
-        // Update labels based on selected dropdown values
         GameManager.Instance.UpdateXText(xDropdown.options[xDropdown.value].text);
         GameManager.Instance.UpdateYText(yDropdown.options[yDropdown.value].text);
         GameManager.Instance.UpdateZText(zDropdown.options[zDropdown.value].text);
-
-        // Close the menu
+        LogCurrentSelections();
+        PrintSelectedColumnData();
+        InstantiateSelectedDataPoints();
         GameManager.Instance.ToggleMenu();
     }
 
-    private void InstantiateDataPoints()
+    public void PrintSelectedColumnData()
     {
-        Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
-        Vector3 floorPosition = floor.transform.position;
+        int xIndex = xDropdown.value;
+        int yIndex = yDropdown.value;
+        int zIndex = zDropdown.value;
 
-        // Calculate bottom left position
-        Vector3 bottomLeft = new Vector3(
-            floorPosition.x - floorSize.x / 2,
-            floorPosition.y, // Adjust this based on how you're using the Y-axis
-            floorPosition.z - floorSize.z / 2
-        );
+        Debug.Log($"Selected Data - X ({columnNames[xIndex]}): {string.Join(", ", columnData[xIndex])}");
+        Debug.Log($"Selected Data - Y ({columnNames[yIndex]}): {string.Join(", ", columnData[yIndex])}");
+        Debug.Log($"Selected Data - Z ({columnNames[zIndex]}): {string.Join(", ", columnData[zIndex])}");
+    }
+    #endregion
 
-        float plotPadding = 1.0f; // Add some padding to ensure plots don't touch the edges directly
-
-        // Calculate the new normalized range taking padding into account
-        float normalizedMinX = plotPadding;
-        float normalizedMaxX = floorSize.x - plotPadding;
-        float normalizedMinZ = plotPadding;
-        float normalizedMaxZ = floorSize.z - plotPadding;
-
-        for (int i = 0; i < column3Data.Count; i++)
+    #region Data Points Handler
+    private void InstantiateSelectedDataPoints()
+    {
+        // Clear previous data points from the plot
+        foreach (Transform child in plotPointsParent)
         {
-            float intensity = float.Parse(column3Data[i], CultureInfo.InvariantCulture);
-            minZ = Mathf.Min(minZ, intensity);
-            maxZ = Mathf.Max(maxZ, intensity);
+            Destroy(child.gameObject);
         }
 
-        for (int i = 0; i < column3Data.Count; i++)
+        // Convert selected column data from strings to floats
+        List<float> xValues = ConvertToFloatList(columnData[xDropdown.value]);
+        List<float> yValues = ConvertToFloatList(columnData[yDropdown.value]);
+        List<float> zValues = ConvertToFloatList(columnData[zDropdown.value]);
+
+        // Assuming the floor defines the plot area, calculate the plot bounds
+        Vector3 bottomLeft = floor.transform.position - floorSize / 2;
+        float plotPadding = 1.0f; // Modify this as needed
+
+        // Instantiate data points
+        for (int i = 0; i < xValues.Count; i++)
         {
-            float intensity = float.Parse(column3Data[i], CultureInfo.InvariantCulture);
-
-            // Normalize and scale X and Z within the floor bounds, starting from 0
-            float xPosition = NormalizeValue(i, 0, column3Data.Count - 1, 0, floorSize.x);
-            float zPosition = NormalizeValue(intensity, minZ, maxZ, 0, floorSize.z); // Assuming intensity determines Z-axis position
-
-            // Apply the bottom left offset to each plot position
-            Vector3 plotPosition = new Vector3(xPosition, 0, zPosition) + bottomLeft; // Adjust Y-axis as needed
+            // Normalize positions based on plot size and padding
+            Vector3 position = new Vector3(
+                NormalizeValue(xValues[i], minX, maxX, bottomLeft.x + plotPadding, bottomLeft.x + floorSize.x - plotPadding),
+                NormalizeValue(yValues[i], minY, maxY, bottomLeft.y + plotPadding, bottomLeft.y + floorSize.y - plotPadding),
+                NormalizeValue(zValues[i], minZ, maxZ, bottomLeft.z + plotPadding, bottomLeft.z + floorSize.z - plotPadding)
+            );
 
             // Instantiate the prefab at the calculated position
-            Instantiate(spherePrefab, plotPosition, Quaternion.identity, plotPointsParent);
+            Instantiate(spherePrefab, position, Quaternion.identity, plotPointsParent);
         }
     }
-        
-    private float NormalizeValue(float value, float min, float max, float normalizedMin, float normalizedMax)
+
+    private List<float> ConvertToFloatList(List<string> stringList)
     {
-        if (max - min == 0) return normalizedMin; // Return a default value if min and max are equal
-        return (value - min) / (max - min) * (normalizedMax - normalizedMin) + normalizedMin;
+        List<float> floatList = new List<float>();
+        foreach (string str in stringList)
+        {
+            if (float.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out float value))
+            {
+                floatList.Add(value);
+            }
+            else
+            {
+                Debug.LogError("Failed to parse float from string: " + str);
+            }
+        }
+        return floatList;
     }
 
+    private float NormalizeValue(float value, float min, float max, float newMin, float newMax)
+    {
+        // Avoid division by zero; return newMin by default
+        return (max - min == 0) ? newMin : ((value - min) / (max - min) * (newMax - newMin) + newMin);
+    }
 
+    #endregion
 
+    #region Debugging Purposes
     /// <summary>
-    /// Used for debugging purposes.
+    /// Used for debugging purposes. Outputs each coloumn seperately.
     /// </summary>
     void OutputDataByColumns()
     {
-        // Output for Column 1
         Debug.Log(column1Title);
         foreach (string value in column1Data)
         {
             Debug.Log(value);
         }
 
-        // Output for Column 2
         Debug.Log(column2Title);
         foreach (string value in column2Data)
         {
             Debug.Log(value);
         }
 
-        // Output for Column 3
         Debug.Log(column3Title);
         foreach (string value in column3Data)
         {
             Debug.Log(value);
         }
     }
+    #endregion
 }

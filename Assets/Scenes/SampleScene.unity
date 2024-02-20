@@ -1571,6 +1571,7 @@ GameObject:
   - component: {fileID: 358995677}
   - component: {fileID: 358995679}
   - component: {fileID: 358995678}
+  - component: {fileID: 358995680}
   m_Layer: 5
   m_Name: Background Menu
   m_TagString: Untagged
@@ -1637,6 +1638,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 358995676}
   m_CullTransparentMesh: 1
+--- !u!95 &358995680
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358995676}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &361509529
 GameObject:
   m_ObjectHideFlags: 0
@@ -5554,6 +5576,8 @@ MonoBehaviour:
   waitingUIPanel: {fileID: 741927983}
   uploadedUIPanel: {fileID: 1416869114}
   menuPanel: {fileID: 358995676}
+  IsCSVUploaded: 0
+  menuCondition: {fileID: 1503595059}
 --- !u!1 &1182728347
 GameObject:
   m_ObjectHideFlags: 0
