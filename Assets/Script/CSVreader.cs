@@ -157,56 +157,14 @@ public class CSVreader : MonoBehaviour
         // Clear previous data points from the plot
         foreach (Transform child in plotPointsParent)
         {
-            Destroy(child.gameObject);
-        }
-
-        // Convert selected column data from strings to floats
-        List<float> xValues = ConvertToFloatList(columnData[xDropdown.value]);
-        List<float> yValues = ConvertToFloatList(columnData[yDropdown.value]);
-        List<float> zValues = ConvertToFloatList(columnData[zDropdown.value]);
-
-        // Assuming the floor defines the plot area, calculate the plot bounds
-        Vector3 bottomLeft = floor.transform.position - floorSize / 2;
-        float plotPadding = 1.0f; // Modify this as needed
-
-        // Instantiate data points
-        for (int i = 0; i < xValues.Count; i++)
-        {
-            // Normalize positions based on plot size and padding
-            Vector3 position = new Vector3(
-                NormalizeValue(xValues[i], minX, maxX, bottomLeft.x + plotPadding, bottomLeft.x + floorSize.x - plotPadding),
-                NormalizeValue(yValues[i], minY, maxY, bottomLeft.y + plotPadding, bottomLeft.y + floorSize.y - plotPadding),
-                NormalizeValue(zValues[i], minZ, maxZ, bottomLeft.z + plotPadding, bottomLeft.z + floorSize.z - plotPadding)
-            );
-
-            // Instantiate the prefab at the calculated position
-            Instantiate(spherePrefab, position, Quaternion.identity, plotPointsParent);
-        }
-    }
-
-    private List<float> ConvertToFloatList(List<string> stringList)
-    {
-        List<float> floatList = new List<float>();
-        foreach (string str in stringList)
-        {
-            if (float.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out float value))
+            if (child.gameObject != floor && child.gameObject.name != "Canvas" && child.gameObject.name != "PlotPointsParent") // Ensure 'floor' is not affected
             {
-                floatList.Add(value);
-            }
-            else
-            {
-                Debug.LogError("Failed to parse float from string: " + str);
+                Destroy(child.gameObject);
             }
         }
-        return floatList;
-    }
 
-    private float NormalizeValue(float value, float min, float max, float newMin, float newMax)
-    {
-        // Avoid division by zero; return newMin by default
-        return (max - min == 0) ? newMin : ((value - min) / (max - min) * (newMax - newMin) + newMin);
+        
     }
-
     #endregion
 
     #region Debugging Purposes
