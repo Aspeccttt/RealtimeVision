@@ -5,44 +5,56 @@ using UnityEngine;
 
 public class MenuManager : MonoBehaviour
 {
-    // UI Elements
     public TMP_Dropdown xDropdown;
     public TMP_Dropdown yDropdown;
     public TMP_Dropdown zDropdown;
 
-    public TextMeshProUGUI xLabel;
-    public TextMeshProUGUI yLabel;
-    public TextMeshProUGUI zLabel;
+    private Plotter plotter;
 
-    public GameObject uiPanel;
+    public GameObject menuPanel;
 
     void Start()
     {
+        plotter = FindObjectOfType<Plotter>();
+
         InitializeDropdownListeners();
     }
 
-    /// <summary>
-    /// This method will update the labels of the canvas (Labels inside the world).
-    /// </summary>
     void InitializeDropdownListeners()
     {
-        xDropdown.onValueChanged.AddListener(delegate { UpdateAxisLabel(xDropdown, xLabel); });
-        yDropdown.onValueChanged.AddListener(delegate { UpdateAxisLabel(yDropdown, yLabel); });
-        zDropdown.onValueChanged.AddListener(delegate { UpdateAxisLabel(zDropdown, zLabel); });
+        xDropdown.onValueChanged.AddListener(delegate { UpdatePlotterAxes(); });
+        yDropdown.onValueChanged.AddListener(delegate { UpdatePlotterAxes(); });
+        zDropdown.onValueChanged.AddListener(delegate { UpdatePlotterAxes(); });
     }
 
-    void UpdateAxisLabel(TMP_Dropdown dropdown, TextMeshProUGUI label)
+    void UpdatePlotterAxes()
     {
-        label.text = dropdown.options[dropdown.value].text;
+        if (plotter != null)
+        {
+            string xColumn = xDropdown.options[xDropdown.value].text;
+            string yColumn = yDropdown.options[yDropdown.value].text;
+            string zColumn = zDropdown.options[zDropdown.value].text;
+
+            plotter.UpdateColumnNames(xColumn, yColumn, zColumn);
+        }
+        else
+        {
+            Debug.LogError("Plotter component not found in the scene.");
+        }
     }
 
-    public void ClosePanel()
+    public void OnDoneButtonClick()
     {
-        uiPanel.SetActive(false);
-    }
+        if (plotter != null)
+        {
+            plotter.PlotData(); // Plot the data using the current selections
+            menuPanel.SetActive(false); // Replace 'menuPanel' with the actual reference to your menu
+        }
+        else
+        {
+            Debug.LogError("Plotter component not found in the scene.");
+        }
 
-    public void OpenPanel()
-    {
-        uiPanel.SetActive(true); 
+        // Close the menu (assuming you have a reference to the menu panel)
     }
 }

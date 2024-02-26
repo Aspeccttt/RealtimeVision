@@ -1,43 +1,31 @@
-#region Unity Imports
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
+using System.Text.RegularExpressions;
 using TMPro;
-using UnityEngine;
-#endregion
+using System.IO;
 
-public class CSVreader : MonoBehaviour
+public class CSVReader : MonoBehaviour
 {
     #region Global Variables
     public GameObject spherePrefab;
-    public Transform plotPointsParent;
 
-    private List<string> column1Data = new List<string>();
-    private List<string> column2Data = new List<string>();
-    private List<string> column3Data = new List<string>();
+    private List<Dictionary<string, object>> pointList = new List<Dictionary<string, object>>();
 
-    private float minX, maxX, minY, maxY, minZ, maxZ;
-
-    [SerializeField]
-    private GameObject floor;
-    Vector3 floorSize;
-
+    static string SPLIT_RE = @",(?=(?:[^""]*""[^""]*"")*(?![^""]*""))";
+    static string LINE_SPLIT_RE = @"\r\n|\n\r|\n|\r";
+    static char[] TRIM_CHARS = { '\"' };
 
     [SerializeField]
     public string localURL;
 
-    private string column1Title, column2Title, column3Title;
-
     [SerializeField]
-    CSVUploader uploader;
+    private CSVUploader uploader;
 
     public TMP_Dropdown xDropdown, yDropdown, zDropdown;
-    public UnityEngine.UI.Button doneButton; // Reference to the "Done" button
+    public UnityEngine.UI.Button doneButton;
 
-    private List<List<string>> columnData = new List<List<string>>();
-    private List<string>[] columnDataArrays; // Array of lists to hold column data
     private List<string> columnNames = new List<string>();
     #endregion
 
@@ -46,76 +34,65 @@ public class CSVreader : MonoBehaviour
     {
         uploader = GameObject.Find("GameManager").GetComponent<CSVUploader>();
         doneButton.onClick.AddListener(OnDoneButtonClick);
-        floorSize = floor.GetComponent<Renderer>().bounds.size;
     }
     #endregion
 
     #region CSV File Handling
-    public void ReadCSVFile()
-    {
-        string filePath = uploader.returnLocalURL();
 
-        // Check if the filePath is not empty or null
-        if (string.IsNullOrEmpty(filePath))
-        {
-            Debug.LogError("CSV file path is empty or not set.");
-            return; // Exit the method if the file path is invalid
-        }
+    public void ReadCSVFileFromPath(string filePath)
+    {
+        pointList.Clear(); // Clear existing data
+        columnNames.Clear(); // Clear existing column names
 
         try
         {
             string[] lines = File.ReadAllLines(filePath);
-            GameManager.Instance.CSVLoaded();
-
-            string[] headers = lines[0].Split(',');
-            columnNames.Clear();
-            foreach (string header in headers)
+            if (lines.Length > 1) // Ensure there's more than just the header
             {
-                columnNames.Add(header.Trim());
-            }
+                var headers = Regex.Split(lines[0], SPLIT_RE); // Extract column names
+                columnNames.AddRange(headers); // Add headers to column names list
 
-            columnData.Clear();
-            for (int i = 0; i < headers.Length; i++)
-            {
-                columnData.Add(new List<string>());
-            }
-
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] entries = lines[i].Split(',');
-                for (int j = 0; j < entries.Length && j < columnData.Count; j++)
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    // Add data to corresponding column list
-                    columnData[j].Add(entries[j].Trim());
+                    var values = Regex.Split(lines[i], SPLIT_RE);
+                    if (values.Length == 0 || values[0] == "") continue;
+
+                    var entry = new Dictionary<string, object>();
+                    for (int j = 0; j < headers.Length && j < values.Length; j++)
+                    {
+                        string value = values[j].TrimStart(TRIM_CHARS).TrimEnd(TRIM_CHARS).Replace("\\", "");
+                        object finalValue = value; // Default to string
+                        if (int.TryParse(value, out int n))
+                        {
+                            finalValue = n;
+                        }
+                        else if (float.TryParse(value, out float f))
+                        {
+                            finalValue = f;
+                        }
+                        entry[headers[j]] = finalValue;
+                    }
+                    pointList.Add(entry);
                 }
+
+                // Populate dropdowns after reading the CSV
+                PopulateDropdowns(columnNames);
             }
-            PopulateDropdowns();
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
             Debug.LogError($"Error reading the CSV file: {e.Message}");
         }
-
-        //Verification:
-        Debug.Log("CSV Data Loaded:");
-        for (int i = 0; i < columnNames.Count; i++)
-        {
-            Debug.Log($"{columnNames[i]}: {string.Join(", ", columnData[i])}");
-        }
     }
 
-    public void LogCurrentSelections()
+    // Accessor for the parsed data
+    public List<Dictionary<string, object>> GetPointList()
     {
-        string xSelection = xDropdown.options[xDropdown.value].text;
-        string ySelection = yDropdown.options[yDropdown.value].text;
-        string zSelection = zDropdown.options[zDropdown.value].text;
-
-        Debug.Log($"Current Selections - X: {xSelection}, Y: {ySelection}, Z: {zSelection}");
+        return pointList;
     }
-    #endregion
 
-    #region Menu
-    void PopulateDropdowns()
+    // Method to populate dropdowns with column names
+    public void PopulateDropdowns(List<string> columnNames)
     {
         xDropdown.ClearOptions();
         yDropdown.ClearOptions();
@@ -125,71 +102,29 @@ public class CSVreader : MonoBehaviour
         yDropdown.AddOptions(columnNames);
         zDropdown.AddOptions(columnNames);
 
-        doneButton.interactable = true;
+        // Add a debug log to confirm this method is called
+        Debug.Log("Populating Dropdowns with Column Names");
+    }
+
+    public void OnDropdownValueChange() // Make sure this is hooked to each dropdown's OnValueChanged event
+    {
+        string xColumn = xDropdown.options[xDropdown.value].text;
+        string yColumn = yDropdown.options[yDropdown.value].text;
+        string zColumn = zDropdown.options[zDropdown.value].text;
+
+        Plotter plotter = FindObjectOfType<Plotter>(); // Find the Plotter script in the scene
+        if (plotter != null)
+        {
+            plotter.UpdateColumnNames(xColumn, yColumn, zColumn); // Update Plotter with new column names
+        }
     }
 
     public void OnDoneButtonClick()
     {
-        GameManager.Instance.UpdateXText(xDropdown.options[xDropdown.value].text);
-        GameManager.Instance.UpdateYText(yDropdown.options[yDropdown.value].text);
-        GameManager.Instance.UpdateZText(zDropdown.options[zDropdown.value].text);
-        LogCurrentSelections();
-        PrintSelectedColumnData();
-        InstantiateSelectedDataPoints();
-        GameManager.Instance.ToggleMenu();
+        // Implement the actions that should be performed when the done button is clicked
+        // This could include logging selections, updating UI text, and instantiating data points based on selected columns
+        //InstantiateSelectedDataPoints();
     }
 
-    public void PrintSelectedColumnData()
-    {
-        int xIndex = xDropdown.value;
-        int yIndex = yDropdown.value;
-        int zIndex = zDropdown.value;
-
-        Debug.Log($"Selected Data - X ({columnNames[xIndex]}): {string.Join(", ", columnData[xIndex])}");
-        Debug.Log($"Selected Data - Y ({columnNames[yIndex]}): {string.Join(", ", columnData[yIndex])}");
-        Debug.Log($"Selected Data - Z ({columnNames[zIndex]}): {string.Join(", ", columnData[zIndex])}");
-    }
-    #endregion
-
-    #region Data Points Handler
-    private void InstantiateSelectedDataPoints()
-    {
-        // Clear previous data points from the plot
-        foreach (Transform child in plotPointsParent)
-        {
-            if (child.gameObject != floor && child.gameObject.name != "Canvas" && child.gameObject.name != "PlotPointsParent") // Ensure 'floor' is not affected
-            {
-                Destroy(child.gameObject);
-            }
-        }
-
-        
-    }
-    #endregion
-
-    #region Debugging Purposes
-    /// <summary>
-    /// Used for debugging purposes. Outputs each coloumn seperately.
-    /// </summary>
-    void OutputDataByColumns()
-    {
-        Debug.Log(column1Title);
-        foreach (string value in column1Data)
-        {
-            Debug.Log(value);
-        }
-
-        Debug.Log(column2Title);
-        foreach (string value in column2Data)
-        {
-            Debug.Log(value);
-        }
-
-        Debug.Log(column3Title);
-        foreach (string value in column3Data)
-        {
-            Debug.Log(value);
-        }
-    }
     #endregion
 }

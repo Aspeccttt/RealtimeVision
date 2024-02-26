@@ -11,46 +11,57 @@ using UnityEngine.UI;
 public class CSVUploader : MonoBehaviour
 {
     #region Global Variables
-        string path;
-        public RawImage rawImage;
+    public string path;
+    public RawImage rawImage; // Assuming this is for preview or other purposes
 
-        CSVreader reader;
+    private CSVReader reader; // Ensure this matches the correct class name handling CSV reading
+    #endregion
+
+    #region Unity Lifecycle
     #endregion
 
     #region Handler
     public void OpenFileExplorer()
     {
-        path = EditorUtility.OpenFilePanel("Show all images (.csv)", "", "csv");
+        path = EditorUtility.OpenFilePanel("Load csv file", "", "csv");
         StartCoroutine(FetchCSV());
     }
 
     IEnumerator FetchCSV()
     {
-        UnityWebRequest www = UnityWebRequestTexture.GetTexture("file:///" + path);
+        UnityWebRequest www = UnityWebRequest.Get("file:///" + path);
 
         yield return www.SendWebRequest();
 
-        if (www.isNetworkError || www.isHttpError)
+        if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
         {
-            Debug.Log(www.error);
+            Debug.LogError(www.error);
         }
         else
         {
-            Debug.Log(path.ToString());
-            GameManager.Instance.IsCSVUploaded = true;
+            Debug.Log("CSV file loaded from path: " + path);
+            GameManager.Instance.IsCSVUploaded = true; // Make sure GameManager and its properties are correctly set up
             ReaderCall();
-            StopAllCoroutines();
         }
     }
 
     public void ReaderCall()
     {
-        reader = GameObject.Find("GameManager").GetComponent<CSVreader>();
+        reader = GameObject.Find("GameManager").GetComponent<CSVReader>(); // Make sure this matches your actual GameManager and reader setup
 
-        reader.ReadCSVFile();
+        if (reader != null)
+        {
+            reader.ReadCSVFileFromPath(path); // You should modify CSVReader to handle path directly
+        }
+        else
+        {
+            Debug.LogError("CSVReader component not found in GameManager.");
+        }
     }
 
-    public string returnLocalURL()
-    {return path;}
-    #endregion
+    public string ReturnLocalURL()
+    {
+        return path;
+    }
 }
+    #endregion

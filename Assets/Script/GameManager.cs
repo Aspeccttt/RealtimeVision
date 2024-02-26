@@ -9,12 +9,6 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     #region Global Variables
-    [SerializeField]
-    private TextMeshProUGUI xUI;
-    [SerializeField]
-    private TextMeshProUGUI yUI;
-    [SerializeField]
-    private TextMeshProUGUI zUI;
 
     //UI
     public GameObject waitingUIPanel;
@@ -52,6 +46,11 @@ public class GameManager : MonoBehaviour
         {
             ToggleMenu();
         }
+
+        if (IsCSVUploaded == true)
+        {
+            CSVLoaded();
+        }
     }
 
     private void Start()
@@ -87,33 +86,6 @@ public class GameManager : MonoBehaviour
 
     #region SceneWorld Scripts
 
-    /// <summary>
-    /// These methods are just to update the text for the UI in the world.
-    /// </summary>
-    /// <param name="text"></param>
-    public void UpdateZText(string text)
-    {
-        if (zUI != null)
-        {
-            zUI.text = text;
-        }
-    }
-
-    public void UpdateYText(string text)
-    {
-        if (yUI != null)
-        {
-            yUI.text = text;
-        }
-    }
-
-    public void UpdateXText(string text)
-    {
-        if (xUI != null)
-        {
-            xUI.text = text;
-        }
-    }
     #endregion
 
 }
