@@ -9,16 +9,8 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     #region Global Variables
-
-    //UI
-    public GameObject waitingUIPanel;
-    public GameObject uploadedUIPanel;
-    public GameObject menuPanel;
-
     public bool IsCSVUploaded = false;
-
-
-    [SerializeField] TextMeshProUGUI menuCondition;
+    public List<Dictionary<string, object>> csvData;
     #endregion
 
     #region Singleton
@@ -26,66 +18,30 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        // Check if there are any other instances conflicting
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
         Instance = this;
-
         DontDestroyOnLoad(gameObject);
+
+        // Initialize the CSV data list
+        csvData = new List<Dictionary<string, object>>();
     }
     #endregion
 
-    #region Unity Lifecycle
-    void Update()
+    // Method to store CSV data
+    public void StoreCSVData(List<Dictionary<string, object>> data)
     {
-        // Check for the ESC key press to toggle the menu
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            ToggleMenu();
-        }
-
-        if (IsCSVUploaded == true)
-        {
-            CSVLoaded();
-        }
+        csvData = data;
+        IsCSVUploaded = true;
     }
 
-    private void Start()
+    // Method to retrieve CSV data
+    public List<Dictionary<string, object>> GetCSVData()
     {
-        if (!IsCSVUploaded)
-        {
-            menuCondition.text = "No uploaded CSV, please upload by pressing the button!";
-        }
-        else { menuCondition.text = ""; }
+        return csvData;
     }
-    #endregion
-
-    #region Main Menu Controller
-    /// <summary>
-    /// Toggle the menu's visibility.
-    /// </summary>
-    public void ToggleMenu()
-    {
-        menuPanel.SetActive(!menuPanel.activeSelf);
-    }
-
-    public void changeMenuCondition(string Text)
-    {
-        menuCondition.text = Text;
-    }
-
-    public void CSVLoaded()
-    {
-        waitingUIPanel.SetActive(false);
-        uploadedUIPanel.SetActive(true);
-    }
-    #endregion
-
-    #region SceneWorld Scripts
-
-    #endregion
 
 }

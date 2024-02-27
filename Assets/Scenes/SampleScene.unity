@@ -4865,7 +4865,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1162265618}
-  - component: {fileID: 1162265619}
   - component: {fileID: 1162265620}
   - component: {fileID: 1162265622}
   - component: {fileID: 1162265621}
@@ -4892,25 +4891,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1162265619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1162265616}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1db056a603890784f943942a55fbaaec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spherePrefab: {fileID: 3747961922881207105, guid: d46d4e429859f514eae6ae253f317e60, type: 3}
-  localURL: 
-  uploader: {fileID: 0}
-  xDropdown: {fileID: 1159219729}
-  yDropdown: {fileID: 2097124685}
-  zDropdown: {fileID: 510896209}
-  doneButton: {fileID: 1693693599}
 --- !u!114 &1162265620
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4924,7 +4904,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   path: 
-  rawImage: {fileID: 0}
+  csvPlotter: {fileID: 1162265623}
 --- !u!114 &1162265621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4937,10 +4917,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2203b7ecfb7b0e4458d7a19dd50168a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  waitingUIPanel: {fileID: 741927983}
+  uploadedUIPanel: {fileID: 1416869114}
+  menuPanel: {fileID: 358995676}
+  menuCondition: {fileID: 1503595059}
   xDropdown: {fileID: 1159219729}
   yDropdown: {fileID: 2097124685}
   zDropdown: {fileID: 510896209}
-  menuPanel: {fileID: 358995676}
+  CSVPlotter: {fileID: 0}
 --- !u!114 &1162265622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4953,11 +4937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7433b91338c702b40ab74b547aa40740, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waitingUIPanel: {fileID: 741927983}
-  uploadedUIPanel: {fileID: 1416869114}
-  menuPanel: {fileID: 358995676}
   IsCSVUploaded: 0
-  menuCondition: {fileID: 1503595059}
 --- !u!114 &1162265623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4967,12 +4947,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1162265616}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ebe3d5303364304b90426f98d09e7a9, type: 3}
+  m_Script: {fileID: 11500000, guid: 8a001a355d50a01419b000179c410013, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  columnXName: 
+  columnYName: 
+  columnZName: 
+  plotScale: 10
   PointPrefab: {fileID: 3747961922881207105, guid: d46d4e429859f514eae6ae253f317e60, type: 3}
   PointHolder: {fileID: 929266949}
-  plotScale: 10
+  dropdownX: {fileID: 1159219729}
+  dropdownY: {fileID: 2097124685}
+  dropdownZ: {fileID: 510896209}
 --- !u!1 &1182728347
 GameObject:
   m_ObjectHideFlags: 0
@@ -6946,9 +6932,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1162265621}
-        m_TargetAssemblyTypeName: MenuManager, Assembly-CSharp
-        m_MethodName: OnDoneButtonClick
+      - m_Target: {fileID: 1162265623}
+        m_TargetAssemblyTypeName: CSVPlotter, Assembly-CSharp
+        m_MethodName: PlotData
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

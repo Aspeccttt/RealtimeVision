@@ -1,67 +1,62 @@
-#region Unity Imports
 using UnityEngine;
-using System.IO;
-using UnityEditor;
 using System.Collections;
 using UnityEngine.Networking;
-using UnityEngine.UI;
-#endregion
-
+using UnityEditor;
+using System.Collections.Generic;
 
 public class CSVUploader : MonoBehaviour
 {
-    #region Global Variables
     public string path;
-    public RawImage rawImage; // Assuming this is for preview or other purposes
+    public CSVPlotter csvPlotter;
 
-    private CSVReader reader; // Ensure this matches the correct class name handling CSV reading
-    #endregion
-
-    #region Unity Lifecycle
-    #endregion
-
-    #region Handler
     public void OpenFileExplorer()
     {
         path = EditorUtility.OpenFilePanel("Load csv file", "", "csv");
-        StartCoroutine(FetchCSV());
+        if (!string.IsNullOrEmpty(path))
+        {
+            StartCoroutine(FetchCSV());
+        }
+        else
+        {
+            Debug.Log("CSV loading cancelled or failed.");
+        }
     }
 
     IEnumerator FetchCSV()
     {
-        UnityWebRequest www = UnityWebRequest.Get("file:///" + path);
-
-        yield return www.SendWebRequest();
-
-        if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
+        using (UnityWebRequest www = UnityWebRequest.Get("file:///" + path))
         {
-            Debug.LogError(www.error);
-        }
-        else
-        {
-            Debug.Log("CSV file loaded from path: " + path);
-            GameManager.Instance.IsCSVUploaded = true; // Make sure GameManager and its properties are correctly set up
-            ReaderCall();
-        }
-    }
+            yield return www.SendWebRequest();
 
-    public void ReaderCall()
-    {
-        reader = GameObject.Find("GameManager").GetComponent<CSVReader>(); // Make sure this matches your actual GameManager and reader setup
+            if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
+            {
+                Debug.LogError(www.error);
+            }
+            else
+            {
+                // CSV data successfully loaded, now parse it
+                string csvContent = www.downloadHandler.text;
+                List<Dictionary<string, object>> parsedData = CSVReader.ReadFromString(csvContent);
 
-        if (reader != null)
-        {
-            reader.ReadCSVFileFromPath(path); // You should modify CSVReader to handle path directly
+                // Check if the data is valid
+                if (parsedData != null && parsedData.Count > 0)
+                {
+                    // If csvPlotter is assigned, set the data for plotting
+                    if (csvPlotter != null)
+                    {
+                        csvPlotter.SetData(parsedData);
+                        GameManager.Instance.GetComponent<MenuManager>().CSVLoaded();
+                    }
+                    else
+                    {
+                        Debug.LogError("CSVPlotter reference not set in CSVUploader.");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("No data parsed from CSV.");
+                }
+            }
         }
-        else
-        {
-            Debug.LogError("CSVReader component not found in GameManager.");
-        }
-    }
-
-    public string ReturnLocalURL()
-    {
-        return path;
     }
 }
-    #endregion

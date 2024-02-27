@@ -5,56 +5,77 @@ using UnityEngine;
 
 public class MenuManager : MonoBehaviour
 {
+    #region Global Variables
+    public GameObject waitingUIPanel;
+    public GameObject uploadedUIPanel;
+    public GameObject menuPanel;
+
+    [SerializeField] TextMeshProUGUI menuCondition;
+
     public TMP_Dropdown xDropdown;
     public TMP_Dropdown yDropdown;
     public TMP_Dropdown zDropdown;
 
-    private Plotter plotter;
+    public CSVPlotter CSVPlotter;
 
-    public GameObject menuPanel;
+    #endregion
 
     void Start()
     {
-        plotter = FindObjectOfType<Plotter>();
 
-        InitializeDropdownListeners();
     }
 
-    void InitializeDropdownListeners()
+    private void Update()
     {
-        xDropdown.onValueChanged.AddListener(delegate { UpdatePlotterAxes(); });
-        yDropdown.onValueChanged.AddListener(delegate { UpdatePlotterAxes(); });
-        zDropdown.onValueChanged.AddListener(delegate { UpdatePlotterAxes(); });
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ToggleMenu();
+        }
     }
 
-    void UpdatePlotterAxes()
+    #region Main Menu Controller
+
+    /// <summary>
+    /// Toggle the menu's visibility.
+    /// </summary>
+    public void ToggleMenu()
     {
-        if (plotter != null)
-        {
-            string xColumn = xDropdown.options[xDropdown.value].text;
-            string yColumn = yDropdown.options[yDropdown.value].text;
-            string zColumn = zDropdown.options[zDropdown.value].text;
-
-            plotter.UpdateColumnNames(xColumn, yColumn, zColumn);
-        }
-        else
-        {
-            Debug.LogError("Plotter component not found in the scene.");
-        }
+        menuPanel.SetActive(!menuPanel.activeSelf);
     }
 
-    public void OnDoneButtonClick()
+    public void changeMenuCondition(string Text)
     {
-        if (plotter != null)
-        {
-            plotter.PlotData(); // Plot the data using the current selections
-            menuPanel.SetActive(false); // Replace 'menuPanel' with the actual reference to your menu
-        }
-        else
-        {
-            Debug.LogError("Plotter component not found in the scene.");
-        }
-
-        // Close the menu (assuming you have a reference to the menu panel)
+        menuCondition.text = Text;
     }
+
+    public void CSVLoaded()
+    {
+        waitingUIPanel.SetActive(false);
+        uploadedUIPanel.SetActive(true);
+    }
+
+    public void PopulateDropdowns(List<Dictionary<string, object>> pointList)
+    {
+        List<string> columnNames = new List<string>(pointList[0].Keys);
+
+        xDropdown.ClearOptions();
+        yDropdown.ClearOptions();
+        zDropdown.ClearOptions();
+
+        xDropdown.AddOptions(columnNames);
+        yDropdown.AddOptions(columnNames);
+        zDropdown.AddOptions(columnNames);
+    }
+
+    public void OnDoneButtonClicked()
+    {
+        CSVPlotter.columnXName = xDropdown.options[xDropdown.value].text;
+        CSVPlotter.columnYName = yDropdown.options[yDropdown.value].text;
+        CSVPlotter.columnZName = zDropdown.options[zDropdown.value].text;
+
+        CSVPlotter.PlotData();
+        ToggleMenu(); 
+    }
+
+    #endregion
 }
