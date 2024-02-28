@@ -22,11 +22,14 @@ public class CSVPlotter : MonoBehaviour
     public TMP_Dropdown dropdownY;
     public TMP_Dropdown dropdownZ;
 
+    public GameObject floor;
+    public float heightOffset = 0.1f;  // Points will spawn this much above the floor
+
     public void SetData(List<Dictionary<string, object>> data)
     {
         pointList = data; 
         PopulateDropdowns(); 
-        Debug.Log("Data has been set.");
+        Debug.Log("Data has been initialized in the dropdown.");
     }
 
     private void PopulateDropdowns()
@@ -44,28 +47,42 @@ public class CSVPlotter : MonoBehaviour
 
     public void PlotData()
     {
+        // Clear existing points
         foreach (Transform child in PointHolder.transform)
         {
             Destroy(child.gameObject);
         }
 
+        // Retrieve column names from dropdowns
         columnXName = dropdownX.options[dropdownX.value].text;
         columnYName = dropdownY.options[dropdownY.value].text;
         columnZName = dropdownZ.options[dropdownZ.value].text;
 
+        // Find max and min values for normalization
         float xMax = FindMaxValue(columnXName), xMin = FindMinValue(columnXName);
         float yMax = FindMaxValue(columnYName), yMin = FindMinValue(columnYName);
         float zMax = FindMaxValue(columnZName), zMin = FindMinValue(columnZName);
 
+        // Assuming floorSize and floorPosition represent the bounding area and center for plotting
+        Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
+        Vector3 floorPosition = floor.transform.position;
+
         foreach (var point in pointList)
         {
-            // Normalize the point data
+            // Normalize point data
             float x = (Convert.ToSingle(point[columnXName]) - xMin) / (xMax - xMin);
-            float y = (Convert.ToSingle(point[columnYName]) - yMin) / (yMax - yMin);
+            float y = (Convert.ToSingle(point[columnYName]) - yMin) / (yMax - yMin);  // Now represents actual data value
             float z = (Convert.ToSingle(point[columnZName]) - zMin) / (zMax - zMin);
 
+            // Scale and position points based on floor size and actual data values
+            Vector3 plotPosition = new Vector3(
+                floorPosition.x + (x * floorSize.x) - (floorSize.x / 2),  // X position adjusted for floor center
+                floorPosition.y + (y * plotScale) + heightOffset,         // Y position based on data value and scale
+                floorPosition.z + (z * floorSize.z) - (floorSize.z / 2)   // Z position adjusted for floor center
+            );
+
             // Instantiate and position the data point
-            GameObject dataPoint = Instantiate(PointPrefab, new Vector3(x, y, z) * plotScale, Quaternion.identity);
+            GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
             dataPoint.transform.parent = PointHolder.transform;
 
             // Naming and coloring the data point
@@ -73,7 +90,7 @@ public class CSVPlotter : MonoBehaviour
             dataPoint.GetComponent<Renderer>().material.color = new Color(x, y, z, 1.0f);
         }
 
-        Debug.Log("Data plotting complete.");
+        Debug.Log("Data has been plotted successfully.");
     }
 
     private float FindMaxValue(string columnName)

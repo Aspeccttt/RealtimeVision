@@ -20,11 +20,6 @@ public class MenuManager : MonoBehaviour
 
     #endregion
 
-    void Start()
-    {
-
-    }
-
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -40,7 +35,30 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     public void ToggleMenu()
     {
-        menuPanel.SetActive(!menuPanel.activeSelf);
+        Animator menuAnimator = menuPanel.GetComponent<Animator>();
+
+        if (menuPanel.activeSelf)
+        {
+            menuAnimator.SetTrigger("Close");
+
+            StartCoroutine(DeactivateAfterAnimation(menuAnimator, "Close"));
+        }
+        else
+        {
+            menuPanel.SetActive(true);
+            menuAnimator.SetTrigger("Open");
+        }
+    }
+
+    private IEnumerator DeactivateAfterAnimation(Animator animator, string animation)
+    {
+        float animationDuration = animator.GetCurrentAnimatorStateInfo(0).length;
+        yield return new WaitForSeconds(animationDuration);
+
+        if (animation == "Close")
+        {
+            menuPanel.SetActive(false);
+        }
     }
 
     public void changeMenuCondition(string Text)
@@ -76,6 +94,7 @@ public class MenuManager : MonoBehaviour
         CSVPlotter.PlotData();
         ToggleMenu(); 
     }
+
 
     #endregion
 }
