@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2800153062832132086}
   - component: {fileID: 7683517965826348699}
   - component: {fileID: 4994602303285606518}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: PlotPoint
   m_TagString: DataPoint
   m_Icon: {fileID: 0}

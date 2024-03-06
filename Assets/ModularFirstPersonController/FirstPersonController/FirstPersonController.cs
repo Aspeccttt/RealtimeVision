@@ -414,21 +414,30 @@ public class FirstPersonController : MonoBehaviour
             HeadBob();
         }
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0)) // Assuming you want the raycast to happen on a mouse click
         {
             Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
-            Debug.Log("Raycast sent"); // Debug line
+            // Draw the ray in the scene for debugging purposes
+            // This will draw a line from the origin of the ray in the direction it's pointing for 1000 units
+            Debug.DrawRay(ray.origin, ray.direction * 1000, Color.red, 2f); // The line will be red and will last for 2 seconds
 
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity))
             {
-                Debug.Log($"Raycast hit: {hit.collider.name}"); // Debug line
-
+                // Check if the ray hit a game object tagged as "DataPoint"
                 if (hit.collider.CompareTag("DataPoint"))
                 {
                     ShowInfoPanel(hit.point);
                 }
+                else
+                {
+                    Debug.Log("Hit object but not a DataPoint: " + hit.collider.name); // Additional debug to check what is being hit
+                }
+            }
+            else
+            {
+                Debug.Log("Raycast did not hit any objects.");
             }
         }
     }
@@ -608,6 +617,7 @@ public class FirstPersonController : MonoBehaviour
             panelPosition.y = Mathf.Max(panelPosition.y, position.y);
 
             GameObject infoPanel = Instantiate(infoPanelPrefab, panelPosition, panelRotation);
+            infoPanel.SetActive(true);
 
             // Additional setup for the panel can go here (e.g., setting text based on the hit data point)
         }
