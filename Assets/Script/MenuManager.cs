@@ -18,6 +18,10 @@ public class MenuManager : MonoBehaviour
 
     public CSVPlotter CSVPlotter;
 
+    public TextMeshProUGUI xTitle;
+    public TextMeshProUGUI yTitle;
+    public TextMeshProUGUI zTitle;
+
     #endregion
 
     private void Update()
@@ -40,12 +44,13 @@ public class MenuManager : MonoBehaviour
         if (menuPanel.activeSelf)
         {
             menuAnimator.SetTrigger("Close");
-
+            Cursor.lockState = CursorLockMode.Locked;
             StartCoroutine(DeactivateAfterAnimation(menuAnimator, "Close"));
         }
         else
         {
             menuPanel.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
             menuAnimator.SetTrigger("Open");
         }
     }
@@ -87,12 +92,17 @@ public class MenuManager : MonoBehaviour
 
     public void OnDoneButtonClicked()
     {
-        CSVPlotter.columnXName = xDropdown.options[xDropdown.value].text;
-        CSVPlotter.columnYName = yDropdown.options[yDropdown.value].text;
-        CSVPlotter.columnZName = zDropdown.options[zDropdown.value].text;
+        GameManager.Instance.GetComponent<CSVPlotter>().columnXName = xDropdown.options[xDropdown.value].text;
+        GameManager.Instance.GetComponent<CSVPlotter>().columnYName = yDropdown.options[yDropdown.value].text;
+        GameManager.Instance.GetComponent<CSVPlotter>().columnZName = zDropdown.options[zDropdown.value].text;
 
-        CSVPlotter.PlotData();
-        ToggleMenu(); 
+        xTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnXName;
+        yTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnYName;
+        zTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnZName;
+
+        GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
+
+        ToggleMenu();
     }
 
 

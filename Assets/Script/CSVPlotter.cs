@@ -6,7 +6,6 @@ using TMPro;
 
 public class CSVPlotter : MonoBehaviour
 {
-    // These should match the dropdown selections
     public string columnXName;
     public string columnYName;
     public string columnZName;
@@ -47,13 +46,11 @@ public class CSVPlotter : MonoBehaviour
 
     public void PlotData()
     {
-        // Clear existing points
         foreach (Transform child in PointHolder.transform)
         {
             Destroy(child.gameObject);
         }
 
-        // Retrieve column names from dropdowns
         columnXName = dropdownX.options[dropdownX.value].text;
         columnYName = dropdownY.options[dropdownY.value].text;
         columnZName = dropdownZ.options[dropdownZ.value].text;
@@ -63,7 +60,6 @@ public class CSVPlotter : MonoBehaviour
         float yMax = FindMaxValue(columnYName), yMin = FindMinValue(columnYName);
         float zMax = FindMaxValue(columnZName), zMin = FindMinValue(columnZName);
 
-        // Assuming floorSize and floorPosition represent the bounding area and center for plotting
         Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
         Vector3 floorPosition = floor.transform.position;
 
@@ -71,14 +67,14 @@ public class CSVPlotter : MonoBehaviour
         {
             // Normalize point data
             float x = (Convert.ToSingle(point[columnXName]) - xMin) / (xMax - xMin);
-            float y = (Convert.ToSingle(point[columnYName]) - yMin) / (yMax - yMin);  // Now represents actual data value
+            float y = (Convert.ToSingle(point[columnYName]) - yMin) / (yMax - yMin);
             float z = (Convert.ToSingle(point[columnZName]) - zMin) / (zMax - zMin);
 
             // Scale and position points based on floor size and actual data values
             Vector3 plotPosition = new Vector3(
-                floorPosition.x + (x * floorSize.x) - (floorSize.x / 2),  // X position adjusted for floor center
-                floorPosition.y + (y * plotScale) + heightOffset,         // Y position based on data value and scale
-                floorPosition.z + (z * floorSize.z) - (floorSize.z / 2)   // Z position adjusted for floor center
+                floorPosition.x + (x * floorSize.x) - (floorSize.x / 2),
+                floorPosition.y + (y * plotScale) + heightOffset,
+                floorPosition.z + (z * floorSize.z) - (floorSize.z / 2)
             );
 
             // Instantiate and position the data point
