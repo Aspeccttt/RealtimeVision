@@ -24,6 +24,14 @@ public class CSVPlotter : MonoBehaviour
     public GameObject floor;
     public float heightOffset = 0.1f;  // Points will spawn this much above the floor
 
+    private float[] xPlotPoints;
+    private float[] yPlotPoints;
+    private float[] zPlotPoints;
+
+    public TextMeshProUGUI[] xPlotTexts;
+    public TextMeshProUGUI[] yPlotTexts;
+    public TextMeshProUGUI[] zPlotTexts;
+
     public void SetData(List<Dictionary<string, object>> data)
     {
         pointList = data; 
@@ -103,5 +111,67 @@ public class CSVPlotter : MonoBehaviour
         foreach (var point in pointList)
             minValue = Mathf.Min(minValue, Convert.ToSingle(point[columnName]));
         return minValue;
+    }
+
+    public float[] CalculatePlotPoints(string columnName)
+    {
+        float maxVal = FindMaxValue(columnName);
+        float minVal = FindMinValue(columnName);
+        float[] plotPoints = new float[10]; // Array to hold your plot points
+
+        float interval = (maxVal - minVal) / 9; // Divide the range into 9 intervals (for 10 points)
+
+        for (int i = 0; i < 10; i++)
+        {
+            plotPoints[i] = minVal + interval * i; // Calculate each plot point
+        }
+
+        return plotPoints; // Return the array of plot points
+    }
+
+    public void CalculateAllPlotPoints()
+    {
+        // Ensure the data is set and columns are selected
+        if (pointList != null && pointList.Count > 0)
+        {
+            // Calculate plot points for each axis based on current dropdown selections
+            xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
+            yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
+            zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
+
+            // Log plot points for debugging (Optional)
+            DebugLogPlotPoints(xPlotPoints, "X");
+            DebugLogPlotPoints(yPlotPoints, "Y");
+            DebugLogPlotPoints(zPlotPoints, "Z");
+        }
+    }
+
+    private void DebugLogPlotPoints(float[] plotPoints, string axisName)
+    {
+        for (int i = 0; i < plotPoints.Length; i++)
+        {
+            Debug.Log(axisName + " Plot Point " + (i + 1) + ": " + plotPoints[i]);
+        }
+    }
+
+    public void UpdatePlotPointTexts()
+    {
+        // Update X-axis plot points text
+        for (int i = 0; i < xPlotPoints.Length && i < xPlotTexts.Length; i++)
+        {
+            xPlotTexts[i].text = xPlotPoints[i].ToString("F2"); // "F2" formats to two decimal places
+        }
+
+        // Update Y-axis plot points text
+        for (int i = 0; i < yPlotPoints.Length && i < yPlotTexts.Length; i++)
+        {
+            yPlotTexts[i].text = yPlotPoints[i].ToString("F2");
+        }
+
+        // Update Z-axis plot points text
+        for (int i = 0; i < zPlotPoints.Length && i < zPlotTexts.Length; i++)
+        {
+            zPlotTexts[i].text = zPlotPoints[i].ToString("F2");
+        }
     }
 }

@@ -18,8 +18,12 @@ public class FirstPersonController : MonoBehaviour
 {
     #region Ilario Cutajar section
 
+    public GameObject infoPanelPrefab;
+    public float infoPanelDistance = 2f;
+    public LayerMask interactableLayer; // Set this to the layer your data points are on
+
     #region Variables
-        private List<Transform> orientableUITransforms;
+    private List<Transform> orientableUITransforms;
         public string targetCamera = "MainCamera";
         public Transform cameraTransform;
     #endregion
@@ -409,6 +413,24 @@ public class FirstPersonController : MonoBehaviour
         {
             HeadBob();
         }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            Debug.Log("Raycast sent"); // Debug line
+
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
+            {
+                Debug.Log($"Raycast hit: {hit.collider.name}"); // Debug line
+
+                if (hit.collider.CompareTag("DataPoint"))
+                {
+                    ShowInfoPanel(hit.point);
+                }
+            }
+        }
     }
 
     void FixedUpdate()
@@ -573,6 +595,27 @@ public class FirstPersonController : MonoBehaviour
             joint.localPosition = new Vector3(Mathf.Lerp(joint.localPosition.x, jointOriginalPos.x, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.y, jointOriginalPos.y, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.z, jointOriginalPos.z, Time.deltaTime * bobSpeed));
         }
     }
+
+    private void ShowInfoPanel(Vector3 position)
+    {
+        if (infoPanelPrefab != null)
+        {
+            // Instantiate the panel in front of the player
+            Vector3 panelPosition = playerCamera.transform.position + playerCamera.transform.forward * infoPanelDistance;
+            Quaternion panelRotation = Quaternion.LookRotation(panelPosition - playerCamera.transform.position);
+
+            // Adjust the panel's vertical position if necessary
+            panelPosition.y = Mathf.Max(panelPosition.y, position.y);
+
+            GameObject infoPanel = Instantiate(infoPanelPrefab, panelPosition, panelRotation);
+
+            // Additional setup for the panel can go here (e.g., setting text based on the hit data point)
+        }
+        else
+        {
+            Debug.LogError("Info panel prefab not set!");
+        }
+    }
 }
 
 
@@ -598,8 +641,8 @@ public class FirstPersonController : MonoBehaviour
         EditorGUILayout.Space();
         GUILayout.Label("Modular First Person Controller", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 16 });
         GUILayout.Label("By Jess Case", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
-        GUILayout.Label("Slightly modified by Ilario Cutajar to be adapted to the Thesis.", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
-        GUILayout.Label("version 1.0.1", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
+        GUILayout.Label("Modified by: Ilario Cutajar to be adapted to the Thesis.", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
+        GUILayout.Label("version 1.1", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
         EditorGUILayout.Space();
 
         #region Camera Setup
@@ -776,8 +819,22 @@ public class FirstPersonController : MonoBehaviour
 
         #endregion
 
+        #region Interactable Objects Setup
+
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("Interactable Objects Setup", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        GUILayout.Label("Section by: Ilario Cutajar.", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
+        EditorGUILayout.Space();
+
+        // Here we add the custom fields for the FirstPersonController script
+        fpc.infoPanelPrefab = (GameObject)EditorGUILayout.ObjectField(new GUIContent("Info Panel Prefab", "Prefab for the information panel displayed upon interacting."), fpc.infoPanelPrefab, typeof(GameObject), false);
+        fpc.infoPanelDistance = EditorGUILayout.FloatField(new GUIContent("Info Panel Distance", "Distance from the camera to show the info panel."), fpc.infoPanelDistance);
+        fpc.interactableLayer = EditorGUILayout.LayerField(new GUIContent("Interactable Layer", "Layer your data points are on."), fpc.interactableLayer);
+
+        #endregion
+
         //Sets any changes from the prefab
-        if(GUI.changed)
+        if (GUI.changed)
         {
             EditorUtility.SetDirty(fpc);
             Undo.RecordObject(fpc, "FPC Change");

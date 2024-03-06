@@ -16,8 +16,6 @@ public class MenuManager : MonoBehaviour
     public TMP_Dropdown yDropdown;
     public TMP_Dropdown zDropdown;
 
-    public CSVPlotter CSVPlotter;
-
     public TextMeshProUGUI xTitle;
     public TextMeshProUGUI yTitle;
     public TextMeshProUGUI zTitle;
@@ -99,6 +97,9 @@ public class MenuManager : MonoBehaviour
         xTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnXName;
         yTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnYName;
         zTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnZName;
+
+        GameManager.Instance.GetComponent<CSVPlotter>().CalculateAllPlotPoints();
+        GameManager.Instance.GetComponent<CSVPlotter>().UpdatePlotPointTexts();
 
         GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
 
