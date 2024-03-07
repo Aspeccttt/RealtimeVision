@@ -24,6 +24,9 @@ public class FirstPersonController : MonoBehaviour
     public float infoPanelDistance = 2f;
     public LayerMask interactableLayer;
     public Transform infoPanelParent;
+    public Transform dragAnchor;
+    private LineRenderer currentLineRenderer;
+
 
     #region Variables
     private List<Transform> orientableUITransforms;
@@ -67,9 +70,17 @@ public class FirstPersonController : MonoBehaviour
 
     private void orientingUiToUser()
     {
-        foreach (Transform uiTransform in orientableUITransforms)
+        for (int i = orientableUITransforms.Count - 1; i >= 0; i--) // Iterate backwards through the list
         {
-            uiTransform.LookAt(uiTransform.position + cameraTransform.rotation * Vector3.forward, cameraTransform.rotation * Vector3.up);
+            if (orientableUITransforms[i] == null)
+            {
+                orientableUITransforms.RemoveAt(i); // Remove the null reference from the list
+            }
+            else
+            {
+                Transform uiTransform = orientableUITransforms[i];
+                uiTransform.LookAt(uiTransform.position + cameraTransform.rotation * Vector3.forward, cameraTransform.rotation * Vector3.up);
+            }
         }
     }
     #endregion
@@ -425,6 +436,9 @@ public class FirstPersonController : MonoBehaviour
             HeadBob();
         }
 
+        bool hasHit = false; // This boolean will track whether an object was hit by the raycast
+
+
         if (Input.GetMouseButtonDown(0))
         {
             PointerEventData pointerData = new PointerEventData(EventSystem.current)
@@ -434,6 +448,8 @@ public class FirstPersonController : MonoBehaviour
 
             List<RaycastResult> uiHits = new List<RaycastResult>();
             EventSystem.current.RaycastAll(pointerData, uiHits);
+            Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
 
             foreach (RaycastResult result in uiHits)
             {
@@ -444,63 +460,79 @@ public class FirstPersonController : MonoBehaviour
                     if (result.gameObject.CompareTag("CloseButton")) // Ensure your close button has the tag "CloseButton"
                     {
                         Debug.Log("Close button was clicked.");
-
-
                         Transform panel = result.gameObject.transform.parent; // Modify this according to your hierarchy
                         while (panel != null && !panel.CompareTag("OrientableUI")) // Use the actual tag of your panel
                         {
                             panel = panel.parent;
                         }
-                        if (panel != null) panel.gameObject.SetActive(false);
-
-                        return; 
+                        if (panel != null) Destroy(panel.gameObject) ;
+                        return;
                     }
 
-                    return; // UI was clicked, so do not proceed to object raycasting in this frame
+                    // Handling the draggable panel
+                    if (result.gameObject.CompareTag("DraggablePanel"))
+                    {
+                        Debug.Log("Initiated Draggable Panel Part");
+
+                        // Find the parent panel marked as "OrientableUI"
+                        Transform panel = result.gameObject.transform.parent; // Starting point for search
+                        while (panel != null && !panel.CompareTag("OrientableUI"))
+                        {
+                            panel = panel.parent;
+                        }
+
+                        if (panel != null)
+                        {
+                            Debug.Log("Dragging panel: " + panel.gameObject.name);
+                            selectedPanel = panel.transform.gameObject;
+                            Vector3 panelScreenPosition = playerCamera.WorldToScreenPoint(selectedPanel.transform.position);
+                            offset = selectedPanel.transform.position - playerCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, panelScreenPosition.z));
+                            isDragging = true;
+                        }
+                        return; // Exit the loop to avoid deactivating the panel
+                    }
                 }
             }
 
-            // Proceed with your regular object raycasting if no UI was clicked
-            Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
+            // Regular object raycasting if no UI was clicked
             if (Physics.Raycast(ray, out hit, Mathf.Infinity))
             {
                 Debug.Log("Raycast hit: " + hit.collider.name);
 
-                if (hit.collider.CompareTag("DataPoint")) // Assuming "DataPoint" is the tag for your interactable objects
+                if (hit.collider.CompareTag("DataPoint"))
                 {
                     Debug.Log("Hit a DataPoint");
-
-                    Color dataPointColor = hit.collider.GetComponent<Renderer>()?.material.color ?? Color.white; // Using null-conditional operator for brevity
-string dataName = hit.collider.gameObject.name; // Or however you get the name of the data
-    ShowInfoPanel(hit.point, dataPointColor, dataName);                }
-                else if (hit.transform.CompareTag("DataPanel")) // Make sure this is the tag for your draggable panels
-                {
-                    selectedPanel = hit.transform.gameObject;
-                    offset = selectedPanel.transform.position - hit.point;
-                    isDragging = true;
+                    Color dataPointColor = hit.collider.GetComponent<Renderer>()?.material.color ?? Color.white;
+                    string dataName = hit.collider.gameObject.name;
+                    ShowInfoPanel(hit.point, dataPointColor, dataName);
                 }
             }
         }
 
-        // Handle dragging
+        // Dragging logic
         if (isDragging)
         {
-            Ray dragRay = playerCamera.ScreenPointToRay(Input.mousePosition);
-            RaycastHit dragHit;
-
-            if (Physics.Raycast(dragRay, out dragHit, Mathf.Infinity, interactableLayer)) // Ensure this layer mask matches your environment
+            if (dragAnchor != null && selectedPanel != null)
             {
-                // Move the panel to the new position with offset
-                selectedPanel.transform.position = dragHit.point + offset;
+                // Set the panel position to the anchor position
+                selectedPanel.transform.position = dragAnchor.transform.position;
+
+                // If there is an active line renderer, update its end position to follow the panel
+                if (currentLineRenderer != null)
+                {
+                    Vector3[] positions = new Vector3[2];
+                    currentLineRenderer.GetPositions(positions);
+                    positions[1] = selectedPanel.transform.position; // Update the second position
+                    currentLineRenderer.SetPositions(positions);
+                }
             }
 
-            // Stop dragging on mouse release
+            // Release the drag on mouse up
             if (Input.GetMouseButtonUp(0))
             {
                 isDragging = false;
                 selectedPanel = null;
+                currentLineRenderer = null; // Clear the reference as the dragging has stopped
             }
         }
     }
@@ -536,13 +568,13 @@ string dataName = hit.collider.gameObject.name; // Or however you get the name o
             }
 
             // Create a LineRenderer component dynamically and set the colour as the same as the datapoint.
-            LineRenderer lineRenderer = infoPanel.AddComponent<LineRenderer>();
-            lineRenderer.startWidth = 0.02f;
-            lineRenderer.endWidth = 0.00002f;
-            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            lineRenderer.material.color = dataPointColor;
-            lineRenderer.positionCount = 2;
-            lineRenderer.SetPositions(new Vector3[] { hitPoint, panelPosition });
+            currentLineRenderer = infoPanel.AddComponent<LineRenderer>();
+            currentLineRenderer.startWidth = 0.02f;
+            currentLineRenderer.endWidth = 0.00002f;
+            currentLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            currentLineRenderer.material.color = dataPointColor;
+            currentLineRenderer.positionCount = 2;
+            currentLineRenderer.SetPositions(new Vector3[] { hitPoint, panelPosition });
         }
         else
         {
@@ -926,7 +958,7 @@ string dataName = hit.collider.gameObject.name; // Or however you get the name o
             fpc.infoPanelPrefab = (GameObject)EditorGUILayout.ObjectField(new GUIContent("Info Panel Prefab", "Prefab for the information panel displayed upon interacting."), fpc.infoPanelPrefab, typeof(GameObject), false);
             fpc.infoPanelDistance = EditorGUILayout.FloatField(new GUIContent("Info Panel Distance", "Distance from the camera to show the info panel."), fpc.infoPanelDistance);
             fpc.interactableLayer = EditorGUILayout.LayerField(new GUIContent("Interactable Layer", "Layer your data points are on."), fpc.interactableLayer);
-
+            fpc.dragAnchor = (Transform)EditorGUILayout.ObjectField(new GUIContent("Drag Anchor", "Parent transform."), fpc.dragAnchor, typeof(Transform), true);
             #endregion
 
             //Sets any changes from the prefab

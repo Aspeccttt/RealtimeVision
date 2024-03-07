@@ -8,6 +8,7 @@ TagManager:
   - DataPoint
   - DataPanel
   - CloseButton
+  - DraggablePanel
   layers:
   - Default
   - TransparentFX
