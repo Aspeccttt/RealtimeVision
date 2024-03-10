@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
@@ -19,6 +20,16 @@ public class MenuManager : MonoBehaviour
     public TextMeshProUGUI xTitle;
     public TextMeshProUGUI yTitle;
     public TextMeshProUGUI zTitle;
+
+    public Button[] buttons; // Assign this array in the inspector with your four buttons.
+    private Button selectedButton = null; // Tracks the currently selected button.
+
+    // Color settings for normal and selected buttons
+    public Color normalColor = Color.black;
+    public Color selectedColor = Color.green;
+
+    public GameObject[] MenuPanels; // Assign the corresponding GameObjects for each button.
+
 
     #endregion
 
@@ -101,11 +112,59 @@ public class MenuManager : MonoBehaviour
         GameManager.Instance.GetComponent<CSVPlotter>().CalculateAllPlotPoints();
         GameManager.Instance.GetComponent<CSVPlotter>().UpdatePlotPointTexts();
 
-        GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
+        Debug.Log(GetSelectedButtonName());
+
+        if (GetSelectedButtonName() == "Linegraph")
+        {
+            GameManager.Instance.GetComponent<LineGraphPlotter>().PlotData();
+
+        }
+        else if (GetSelectedButtonName() == "Scatterplot")
+        {
+            GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
+
+        }
 
         ToggleMenu();
     }
 
+    public void ButtonClicked(Button clickedButton)
+    {
+        // Deselect the previously selected button by resetting its text color or other highlighted properties.
+        if (selectedButton != null)
+        {
+            selectedButton.GetComponentInChildren<TextMeshProUGUI>().color = normalColor;
+        }
+
+        // Set the newly clicked button as the selected one.
+        selectedButton = clickedButton;
+        selectedButton.GetComponentInChildren<TextMeshProUGUI>().color = selectedColor;
+
+        // Deactivate all panels then activate the corresponding one.
+        foreach (var panel in MenuPanels)
+        {
+            panel.SetActive(false); // Deactivate all panels
+        }
+
+        int index = System.Array.IndexOf(buttons, clickedButton);
+        if (index != -1 && index < MenuPanels.Length)
+        {
+            MenuPanels[index].SetActive(true); // Activate the corresponding panel
+        }
+    }
+
+    // Optional: Call this method to get the name of the selected button.
+    public string GetSelectedButtonName()
+    {
+        if (selectedButton != null)
+        {
+            return selectedButton.gameObject.name;
+        }
+        else
+        {
+            return "No button selected";
+        }
+    }
 
     #endregion
 }
