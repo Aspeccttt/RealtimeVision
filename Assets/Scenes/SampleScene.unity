@@ -13572,6 +13572,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   path: 
   csvPlotter: {fileID: 1162265623}
+  lineGraphPlotter: {fileID: 1162265624}
 --- !u!114 &1162265621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13719,14 +13720,14 @@ MonoBehaviour:
   zPlotTexts:
   - {fileID: 1025115916}
   - {fileID: 1839733439}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1465949769}
+  - {fileID: 503528102}
+  - {fileID: 2146820834}
+  - {fileID: 387296492}
+  - {fileID: 1455680832}
+  - {fileID: 1636827372}
+  - {fileID: 19735726}
+  - {fileID: 1802849346}
 --- !u!1 &1166093589
 GameObject:
   m_ObjectHideFlags: 0

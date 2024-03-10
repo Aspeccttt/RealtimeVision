@@ -90,9 +90,14 @@ public class LineGraphPlotter : MonoBehaviour
 
     private float FindMaxValue(string columnName)
     {
-        float maxValue = Convert.ToSingle(pointList[0][columnName]);
+        float maxValue = float.MinValue; // Start with the smallest possible value
         foreach (var point in pointList)
-            maxValue = Mathf.Max(maxValue, Convert.ToSingle(point[columnName]));
+        {
+            if (point.ContainsKey(columnName)) // Check if the column name exists
+            {
+                maxValue = Mathf.Max(maxValue, Convert.ToSingle(point[columnName]));
+            }
+        }
         return maxValue;
     }
 
