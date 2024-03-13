@@ -116,7 +116,7 @@ public class MenuManager : MonoBehaviour
 
         if (GetSelectedButtonName() == "Linegraph")
         {
-            GameManager.Instance.GetComponent<LineGraphPlotter>().PlotData();
+            //GameManager.Instance.GetComponent<LineGraphPlotter>().PlotData();
 
         }
         else if (GetSelectedButtonName() == "Scatterplot")

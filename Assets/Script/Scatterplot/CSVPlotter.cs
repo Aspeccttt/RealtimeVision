@@ -15,7 +15,7 @@ public class CSVPlotter : MonoBehaviour
     public GameObject PointPrefab;
     public GameObject PointHolder; 
 
-    private List<Dictionary<string, object>> pointList; // Holds data from CSV
+    public List<Dictionary<string, object>> pointList; // Holds data from CSV
 
     public TMP_Dropdown dropdownX;
     public TMP_Dropdown dropdownY;
@@ -173,5 +173,13 @@ public class CSVPlotter : MonoBehaviour
         {
             zPlotTexts[i].text = zPlotPoints[i].ToString("F2");
         }
+    }
+
+    public float NormalizeData(Dictionary<string, object> data, string columnName)
+    {
+        float value = Convert.ToSingle(data[columnName]);
+        float max = FindMaxValue(columnName);
+        float min = FindMinValue(columnName);
+        return (value - min) / (max - min);
     }
 }

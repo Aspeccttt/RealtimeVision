@@ -8,7 +8,6 @@ public class CSVUploader : MonoBehaviour
 {
     public string path;
     public CSVPlotter csvPlotter;
-    public LineGraphPlotter lineGraphPlotter;
 
     public void OpenFileExplorer()
     {
@@ -46,8 +45,6 @@ public class CSVUploader : MonoBehaviour
                     if (csvPlotter != null)
                     {
                         csvPlotter.SetData(parsedData);
-                        lineGraphPlotter.SetData(parsedData);
-
 
                         GameManager.Instance.GetComponent<MenuManager>().CSVLoaded();
                     }
