@@ -5802,7 +5802,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &517906224
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13677,7 +13677,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   path: 
   csvPlotter: {fileID: 1162265623}
-  lineGraphPlotter: {fileID: 1162265624}
 --- !u!114 &1162265621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22696,7 +22695,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1960401523
 RectTransform:
   m_ObjectHideFlags: 0
