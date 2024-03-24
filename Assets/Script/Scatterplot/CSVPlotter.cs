@@ -6,11 +6,15 @@ using TMPro;
 
 public class CSVPlotter : MonoBehaviour
 {
+    #region Global Variables
+
     public string columnXName;
     public string columnYName;
     public string columnZName;
 
-    public float plotScale = 10; 
+    public float plotScale = 10;
+    public GameObject floor;
+    public float heightOffset = 0.1f;  // Points will spawn this much above the floor
 
     public GameObject PointPrefab;
     public GameObject PointHolder; 
@@ -21,9 +25,6 @@ public class CSVPlotter : MonoBehaviour
     public TMP_Dropdown dropdownY;
     public TMP_Dropdown dropdownZ;
 
-    public GameObject floor;
-    public float heightOffset = 0.1f;  // Points will spawn this much above the floor
-
     private float[] xPlotPoints;
     private float[] yPlotPoints;
     private float[] zPlotPoints;
@@ -32,6 +33,11 @@ public class CSVPlotter : MonoBehaviour
     public TextMeshProUGUI[] yPlotTexts;
     public TextMeshProUGUI[] zPlotTexts;
 
+    //LineGraph
+    public TMP_Dropdown lineGraphSelectedColumn;
+    public TextMeshProUGUI feedbackText;
+    public List<string> selectedColumns = new List<string>(); // This now becomes global
+    #endregion
     public void SetData(List<Dictionary<string, object>> data)
     {
         pointList = data; 
@@ -46,10 +52,12 @@ public class CSVPlotter : MonoBehaviour
         dropdownX.ClearOptions();
         dropdownY.ClearOptions();
         dropdownZ.ClearOptions();
+        lineGraphSelectedColumn.ClearOptions();
 
         dropdownX.AddOptions(columnList);
         dropdownY.AddOptions(columnList);
         dropdownZ.AddOptions(columnList);
+        lineGraphSelectedColumn.AddOptions(columnList);
     }
 
     public void PlotData()
@@ -97,6 +105,7 @@ public class CSVPlotter : MonoBehaviour
         Debug.Log("Data has been plotted successfully.");
     }
 
+
     private float FindMaxValue(string columnName)
     {
         float maxValue = Convert.ToSingle(pointList[0][columnName]);
@@ -129,29 +138,61 @@ public class CSVPlotter : MonoBehaviour
         return plotPoints; // Return the array of plot points
     }
 
-    public void CalculateAllPlotPoints()
+    public void CalculateLineGraphPoints()
     {
-        // Ensure the data is set and columns are selected
-        if (pointList != null && pointList.Count > 0)
-        {
-            // Calculate plot points for each axis based on current dropdown selections
-            xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
-            yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
-            zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
+        // Start with extreme values and narrow them down based on actual data
+        float globalMax = float.MinValue;
+        float globalMin = float.MaxValue;
 
-            // Log plot points for debugging (Optional)
-            DebugLogPlotPoints(xPlotPoints, "X");
-            DebugLogPlotPoints(yPlotPoints, "Y");
-            DebugLogPlotPoints(zPlotPoints, "Z");
+        // Go through all selected columns to find global min and max
+        foreach (string column in selectedColumns)
+        {
+            float localMax = FindMaxValue(column);
+            float localMin = FindMinValue(column);
+            if (localMax > globalMax) globalMax = localMax;
+            if (localMin < globalMin) globalMin = localMin;
         }
+
+        // Calculate intervals for the labels based on the global min and max
+        float interval = (globalMax - globalMin) / 9; // Divide the range into 9 intervals (for 10 points)
+
+        // Update Y-axis labels
+        for (int i = 0; i < yPlotTexts.Length; i++)
+        {
+            // Assuming yPlotTexts is an array of TextMeshProUGUI with length 10
+            yPlotTexts[i].text = (globalMin + interval * i).ToString("F2");
+        }
+
+        // Updating the X-axis labels
+        for (int i = 0; i< xPlotTexts.Length; i++)
+        {
+            xPlotTexts[i].text = i.ToString();
+        }
+
+        // Updating the Z-axis labels
+        for (int i = 0; i < zPlotTexts.Length; i++)
+        {
+            // Check if there is a corresponding selected column for this index
+            if (i < selectedColumns.Count)
+            {
+                // If there is, set the label to the column name
+                zPlotTexts[i].text = selectedColumns[i];
+            }
+            else
+            {
+                // If there isn't, set the label to an empty string
+                zPlotTexts[i].text = "";
+            }
+        }
+
+        yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
     }
 
-    private void DebugLogPlotPoints(float[] plotPoints, string axisName)
+    public void CalculateAllPlotPoints()
     {
-        for (int i = 0; i < plotPoints.Length; i++)
-        {
-            Debug.Log(axisName + " Plot Point " + (i + 1) + ": " + plotPoints[i]);
-        }
+        xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
+        yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
+        zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
     }
 
     public void UpdatePlotPointTexts()
@@ -181,5 +222,103 @@ public class CSVPlotter : MonoBehaviour
         float max = FindMaxValue(columnName);
         float min = FindMinValue(columnName);
         return (value - min) / (max - min);
+    }
+
+    private void DrawLine(List<Vector3> points, Color color)
+    {
+        GameObject line = new GameObject("Line");
+        line.transform.parent = PointHolder.transform;
+        LineRenderer lr = line.AddComponent<LineRenderer>();
+        lr.material = new Material(Shader.Find("Standard"));
+        lr.startColor = color;
+        lr.endColor = color;
+        lr.startWidth = 0.1f;
+        lr.endWidth = 0.1f;
+        lr.positionCount = points.Count;
+        lr.SetPositions(points.ToArray());
+    }
+
+    public void LineGraphPlot()
+    {
+        // Define colors for the lines
+        Color[] lineColors = new Color[] {
+        new Color(1, 0, 0, 1), // Red for the first column
+        new Color(0, 1, 0, 1), // Green for the second column
+        new Color(0, 0, 1, 1)  // Blue for the third column
+    };
+
+        // Clear previous points and lines
+        foreach (Transform child in PointHolder.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Find global min and max values for the Y axis across all selected columns
+        float globalMin = float.MaxValue;
+        float globalMax = float.MinValue;
+
+        foreach (string columnName in selectedColumns)
+        {
+            foreach (var point in pointList)
+            {
+                float value = Convert.ToSingle(point[columnName]);
+                if (value < globalMin) globalMin = value;
+                if (value > globalMax) globalMax = value;
+            }
+        }
+
+        Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
+        Vector3 floorPosition = floor.transform.position;
+
+        for (int columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
+        {
+            string columnName = selectedColumns[columnIndex];
+            List<Vector3> linePoints = new List<Vector3>();
+
+            // Generate 10 plot points for the current column
+            for (int day = 1; day <= 10; day++)
+            {
+                float yValue = Convert.ToSingle(pointList[day - 1][columnName]);
+                float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
+
+                // Swap the roles of X and Z axes in plotPosition
+                Vector3 plotPosition = new Vector3(
+                    floorPosition.x + (columnIndex * 1), // Move different lines along what used to be Z (now X)
+                    floorPosition.y + (normalizedY * plotScale) + heightOffset,
+                    floorPosition.z + ((day / 10f) * floorSize.z) - (floorSize.z / 2) // Use day to spread along what used to be X (now Z)
+                );
+
+                linePoints.Add(plotPosition);
+            }
+
+            // Draw the line for the current column
+            DrawLine(linePoints, lineColors[columnIndex % lineColors.Length]); // Use modular arithmetic to cycle through colors
+        }
+
+    }
+
+    public void AddSelectedColumn()
+    {
+        // Get the currently selected option
+        string selectedColumn = lineGraphSelectedColumn.options[lineGraphSelectedColumn.value].text;
+
+        // Debugging: Print current contents of selectedColumns
+        Debug.Log("Current selected columns: " + String.Join(", ", selectedColumns));
+
+        // Check if this column has already been selected
+        if (!selectedColumns.Contains(selectedColumn))
+        {
+            // Add the column to the list and update the feedback text
+            selectedColumns.Add(selectedColumn);
+            feedbackText.text = $"Added:" + String.Join(", ", selectedColumns);
+
+            // Debugging: Print updated contents of selectedColumns
+            Debug.Log("Updated selected columns: " + String.Join(", ", selectedColumns));
+        }
+        else
+        {
+            // Inform the user that this column is already added
+            feedbackText.text = "Column already added: " + selectedColumn;
+        }
     }
 }

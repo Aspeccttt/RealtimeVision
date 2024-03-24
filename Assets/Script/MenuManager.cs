@@ -101,28 +101,32 @@ public class MenuManager : MonoBehaviour
 
     public void OnDoneButtonClicked()
     {
-        GameManager.Instance.GetComponent<CSVPlotter>().columnXName = xDropdown.options[xDropdown.value].text;
-        GameManager.Instance.GetComponent<CSVPlotter>().columnYName = yDropdown.options[yDropdown.value].text;
-        GameManager.Instance.GetComponent<CSVPlotter>().columnZName = zDropdown.options[zDropdown.value].text;
-
-        xTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnXName;
-        yTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnYName;
-        zTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnZName;
-
-        GameManager.Instance.GetComponent<CSVPlotter>().CalculateAllPlotPoints();
-        GameManager.Instance.GetComponent<CSVPlotter>().UpdatePlotPointTexts();
-
-        Debug.Log(GetSelectedButtonName());
-
         if (GetSelectedButtonName() == "Linegraph")
         {
-            //GameManager.Instance.GetComponent<LineGraphPlotter>().PlotData();
+            xTitle.text = "Time (days)";
+            yTitle.text = "Values";
+            zTitle.text = "Selected Columns";
 
+            GameManager.Instance.GetComponent<CSVPlotter>().CalculateLineGraphPoints();
+
+            GameManager.Instance.GetComponent<CSVPlotter>().LineGraphPlot();
         }
         else if (GetSelectedButtonName() == "Scatterplot")
         {
-            GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
+            GameManager.Instance.GetComponent<CSVPlotter>().columnXName = xDropdown.options[xDropdown.value].text;
+            GameManager.Instance.GetComponent<CSVPlotter>().columnYName = yDropdown.options[yDropdown.value].text;
+            GameManager.Instance.GetComponent<CSVPlotter>().columnZName = zDropdown.options[zDropdown.value].text;
 
+            xTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnXName;
+            yTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnYName;
+            zTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnZName;
+
+            GameManager.Instance.GetComponent<CSVPlotter>().CalculateAllPlotPoints();
+            GameManager.Instance.GetComponent<CSVPlotter>().UpdatePlotPointTexts();
+
+            Debug.Log(GetSelectedButtonName());
+
+            GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
         }
 
         ToggleMenu();

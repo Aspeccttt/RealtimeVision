@@ -455,7 +455,7 @@ public class FirstPersonController : MonoBehaviour
             {
                 if (LayerMask.LayerToName(result.gameObject.layer) == "UI") // Replace "UI" with your actual layer name
                 {
-                    Debug.Log("UI Hit: " + result.gameObject.name);
+                    //Debug.Log("UI Hit: " + result.gameObject.name);
 
                     if (result.gameObject.CompareTag("CloseButton")) // Ensure your close button has the tag "CloseButton"
                     {
@@ -497,7 +497,7 @@ public class FirstPersonController : MonoBehaviour
             // Regular object raycasting if no UI was clicked
             if (Physics.Raycast(ray, out hit, Mathf.Infinity))
             {
-                Debug.Log("Raycast hit: " + hit.collider.name);
+                //Debug.Log("Raycast hit: " + hit.collider.name);
 
                 if (hit.collider.CompareTag("DataPoint"))
                 {
