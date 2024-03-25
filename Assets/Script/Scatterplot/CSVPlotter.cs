@@ -224,29 +224,8 @@ public class CSVPlotter : MonoBehaviour
         return (value - min) / (max - min);
     }
 
-    private void DrawLine(List<Vector3> points, Color color)
-    {
-        GameObject line = new GameObject("Line");
-        line.transform.parent = PointHolder.transform;
-        LineRenderer lr = line.AddComponent<LineRenderer>();
-        lr.material = new Material(Shader.Find("Standard"));
-        lr.startColor = color;
-        lr.endColor = color;
-        lr.startWidth = 0.1f;
-        lr.endWidth = 0.1f;
-        lr.positionCount = points.Count;
-        lr.SetPositions(points.ToArray());
-    }
-
     public void LineGraphPlot()
     {
-        // Define colors for the lines
-        Color[] lineColors = new Color[] {
-        new Color(1, 0, 0, 1), // Red for the first column
-        new Color(0, 1, 0, 1), // Green for the second column
-        new Color(0, 0, 1, 1)  // Blue for the third column
-    };
-
         // Clear previous points and lines
         foreach (Transform child in PointHolder.transform)
         {
@@ -270,8 +249,14 @@ public class CSVPlotter : MonoBehaviour
         Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
         Vector3 floorPosition = floor.transform.position;
 
+        // Store generated colors for reuse with text labels
+        List<Color> generatedColors = new List<Color>();
+
         for (int columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
         {
+            Color randomColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1);
+            generatedColors.Add(randomColor);
+
             string columnName = selectedColumns[columnIndex];
             List<Vector3> linePoints = new List<Vector3>();
 
@@ -281,20 +266,40 @@ public class CSVPlotter : MonoBehaviour
                 float yValue = Convert.ToSingle(pointList[day - 1][columnName]);
                 float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
 
-                // Swap the roles of X and Z axes in plotPosition
                 Vector3 plotPosition = new Vector3(
-                    floorPosition.x + (columnIndex * 1), // Move different lines along what used to be Z (now X)
+                    floorPosition.x + 2 + (columnIndex * 1),
                     floorPosition.y + (normalizedY * plotScale) + heightOffset,
-                    floorPosition.z + ((day / 10f) * floorSize.z) - (floorSize.z / 2) // Use day to spread along what used to be X (now Z)
+                    floorPosition.z + ((day / 10f) * floorSize.z) - (floorSize.z / 2)
                 );
 
                 linePoints.Add(plotPosition);
+
+                // Instantiate data point at this plot position
+                GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
+                dataPoint.transform.parent = PointHolder.transform; // Set parent to keep the scene organized
+                dataPoint.GetComponent<Renderer>().material.color = randomColor; // Set the data point's color
             }
 
-            // Draw the line for the current column
-            DrawLine(linePoints, lineColors[columnIndex % lineColors.Length]); // Use modular arithmetic to cycle through colors
+            // Draw the line for the current column with the generated random color
+            GameObject line = DrawLine(linePoints, randomColor);
+            line.transform.parent = PointHolder.transform; // Set parent for the line as well
         }
+        // Update Z-axis labels with the generated colors
+        UpdateZAxisLabels(generatedColors);
+    }
 
+    private GameObject DrawLine(List<Vector3> points, Color color)
+    {
+        GameObject line = new GameObject("Line");
+        LineRenderer lr = line.AddComponent<LineRenderer>();
+        lr.material = new Material(Shader.Find("Unlit/Color")); // Use a basic unlit color material
+        lr.startColor = color;
+        lr.endColor = color;
+        lr.startWidth = 0.1f;
+        lr.endWidth = 0.1f;
+        lr.positionCount = points.Count;
+        lr.SetPositions(points.ToArray());
+        return line; // Return the created line object
     }
 
     public void AddSelectedColumn()
@@ -319,6 +324,22 @@ public class CSVPlotter : MonoBehaviour
         {
             // Inform the user that this column is already added
             feedbackText.text = "Column already added: " + selectedColumn;
+        }
+    }
+
+    public void UpdateZAxisLabels(List<Color> colors)
+    {
+        for (int i = 0; i < zPlotTexts.Length; i++)
+        {
+            if (i < selectedColumns.Count)
+            {
+                zPlotTexts[i].text = selectedColumns[i];
+                zPlotTexts[i].color = colors[i]; // Set the text color
+            }
+            else
+            {
+                zPlotTexts[i].text = ""; // Clear any unused labels
+            }
         }
     }
 }
