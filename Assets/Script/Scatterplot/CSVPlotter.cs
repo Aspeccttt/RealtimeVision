@@ -14,7 +14,7 @@ public class CSVPlotter : MonoBehaviour
 
     public float plotScale = 10;
     public GameObject floor;
-    public float heightOffset = 0.1f;  // Points will spawn this much above the floor
+    public float heightOffset = 1f;  // Points will spawn this much above the floor
 
     public GameObject PointPrefab;
     public GameObject PointHolder; 
@@ -66,6 +66,8 @@ public class CSVPlotter : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+
+        PointHolder.transform.tag = "Scatterplot";
 
         columnXName = dropdownX.options[dropdownX.value].text;
         columnYName = dropdownY.options[dropdownY.value].text;
@@ -164,9 +166,9 @@ public class CSVPlotter : MonoBehaviour
         }
 
         // Updating the X-axis labels
-        for (int i = 0; i< xPlotTexts.Length; i++)
+        for (int i = 0; i < xPlotTexts.Length; i++)
         {
-            xPlotTexts[i].text = i.ToString();
+            xPlotTexts[i].text = (i + 1).ToString();
         }
 
         // Updating the Z-axis labels
@@ -232,6 +234,8 @@ public class CSVPlotter : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        PointHolder.transform.tag = "LineGraph";
+
         // Find global min and max values for the Y axis across all selected columns
         float globalMin = float.MaxValue;
         float globalMax = float.MinValue;
@@ -263,14 +267,17 @@ public class CSVPlotter : MonoBehaviour
             // Generate 10 plot points for the current column
             for (int day = 1; day <= 10; day++)
             {
-                float yValue = Convert.ToSingle(pointList[day - 1][columnName]);
+                float yValue = Convert.ToSingle(pointList[day - 1][columnName]); // This remains unchanged
                 float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
 
+                // Adjust the calculation here for the Z-coordinate
+                // We change how 'day' influences 'plotPosition.z' to reverse the plotting order
                 Vector3 plotPosition = new Vector3(
                     floorPosition.x + 2 + (columnIndex * 1),
                     floorPosition.y + (normalizedY * plotScale) + heightOffset,
-                    floorPosition.z + ((day / 10f) * floorSize.z) - (floorSize.z / 2)
+                    floorPosition.z + ((10f - day) / 10f * floorSize.z) - (floorSize.z / 2)  // Invert the day's influence
                 );
+
 
                 linePoints.Add(plotPosition);
 
@@ -278,6 +285,9 @@ public class CSVPlotter : MonoBehaviour
                 GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
                 dataPoint.transform.parent = PointHolder.transform; // Set parent to keep the scene organized
                 dataPoint.GetComponent<Renderer>().material.color = randomColor; // Set the data point's color
+
+                string dataValue = yValue.ToString("F2");
+                dataPoint.name = $"{columnName} {dataValue} {day}";
             }
 
             // Draw the line for the current column with the generated random color

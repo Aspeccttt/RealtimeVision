@@ -504,7 +504,12 @@ public class FirstPersonController : MonoBehaviour
                     Debug.Log("Hit a DataPoint");
                     Color dataPointColor = hit.collider.GetComponent<Renderer>()?.material.color ?? Color.white;
                     string dataName = hit.collider.gameObject.name;
-                    ShowInfoPanel(hit.point, dataPointColor, dataName);
+                    //Debug.Log("Parent's Tag: " + hit.transform.parent.tag + " / " + hit.transform.name.ToString());
+                    if (hit.transform.parent.tag == "Scatterplot")
+                        ShowInfoPanel(hit.point, dataPointColor, dataName, GameManager.Instance.GetComponent<CSVPlotter>().columnXName, GameManager.Instance.GetComponent<CSVPlotter>().columnYName, GameManager.Instance.GetComponent<CSVPlotter>().columnZName);
+
+                    if (hit.transform.parent.tag == "LineGraph")
+                        ShowInfoPanel(hit.point, dataPointColor, dataName, "Title", "Value", "Day:");
                 }
             }
         }
@@ -537,49 +542,44 @@ public class FirstPersonController : MonoBehaviour
         }
     }
 
-    private void ShowInfoPanel(Vector3 hitPoint, Color dataPointColor, string dataName)
+    private void ShowInfoPanel(Vector3 hitPoint, Color dataPointColor, string dataName,string CX, string CY, string CZ)
     {
-        if (infoPanelPrefab != null)
+        Vector3 forwardDirection = playerCamera.transform.forward;
+        forwardDirection.y = 0; // Adjust if you want the panel to align differently
+        Vector3 panelPosition = playerCamera.transform.position + forwardDirection.normalized * infoPanelDistance;
+
+        panelPosition.y = Mathf.Max(hitPoint.y, panelPosition.y);
+
+        Quaternion panelRotation = Quaternion.LookRotation(panelPosition - playerCamera.transform.position);
+
+        GameObject infoPanel = Instantiate(infoPanelPrefab, panelPosition, panelRotation, infoPanelParent);
+        infoPanel.transform.LookAt(playerCamera.transform.position);
+        infoPanel.SetActive(true);
+
+        Image backgroundImage = infoPanel.GetComponentInChildren<Image>();
+        backgroundImage.color = dataPointColor;
+
+        string[] parts = dataName.Split(' '); // This assumes dataName format is "x y z"
+        if (parts.Length >= 3)
         {
-            Vector3 forwardDirection = playerCamera.transform.forward;
-            forwardDirection.y = 0; // Adjust if you want the panel to align differently
-            Vector3 panelPosition = playerCamera.transform.position + forwardDirection.normalized * infoPanelDistance;
-
-            panelPosition.y = Mathf.Max(hitPoint.y, panelPosition.y);
-
-            Quaternion panelRotation = Quaternion.LookRotation(panelPosition - playerCamera.transform.position);
-
-            GameObject infoPanel = Instantiate(infoPanelPrefab, panelPosition, panelRotation, infoPanelParent);
-            infoPanel.transform.LookAt(playerCamera.transform.position);
-            infoPanel.SetActive(true);
-
-            Image backgroundImage = infoPanel.GetComponentInChildren<Image>();
-            backgroundImage.color = dataPointColor;
-
             TMP_Text[] infoTexts = infoPanel.GetComponentsInChildren<TMP_Text>();
-            if (infoTexts.Length > 1) // Make sure there are at least two TMP_Text components
-            {
-                TMP_Text infoText = infoTexts[1]; // Get the second TextMeshPro component
-                infoText.text = dataName;
-            }
-            else
-            {
-                Debug.LogError("Not enough TextMeshPro components found in the info panel.");
-            }
+            // Now assigning the parts of the dataName to the respective TMP_Text components
+            infoTexts[1].text = CX; // ColumnX name (you might want to fetch actual name instead of hardcoding)
+            infoTexts[2].text = parts[0]; // ColumnX Data
+            infoTexts[3].text = CY; // ColumnY name
+            infoTexts[4].text = parts[1]; // ColumnY Data
+            infoTexts[5].text = CZ; // ColumnZ name
+            infoTexts[6].text = parts[2]; // ColumnZ Data
+        }
 
-            // Create a LineRenderer component dynamically and set the colour as the same as the datapoint.
-            currentLineRenderer = infoPanel.AddComponent<LineRenderer>();
-            currentLineRenderer.startWidth = 0.02f;
-            currentLineRenderer.endWidth = 0.00002f;
-            currentLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            currentLineRenderer.material.color = dataPointColor;
-            currentLineRenderer.positionCount = 2;
-            currentLineRenderer.SetPositions(new Vector3[] { hitPoint, panelPosition });
-        }
-        else
-        {
-            Debug.LogError("Info panel prefab not set!");
-        }
+        // Create a LineRenderer component dynamically and set the colour as the same as the datapoint.
+        currentLineRenderer = infoPanel.AddComponent<LineRenderer>();
+        currentLineRenderer.startWidth = 0.02f;
+        currentLineRenderer.endWidth = 0.00002f;
+        currentLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        currentLineRenderer.material.color = dataPointColor;
+        currentLineRenderer.positionCount = 2;
+        currentLineRenderer.SetPositions(new Vector3[] { hitPoint, panelPosition });
 
         uiArrayCounter();
     }

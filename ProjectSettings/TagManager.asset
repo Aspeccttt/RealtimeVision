@@ -9,6 +9,8 @@ TagManager:
   - DataPanel
   - CloseButton
   - DraggablePanel
+  - LineGraph
+  - Scatterplot
   layers:
   - Default
   - TransparentFX
