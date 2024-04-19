@@ -30,6 +30,14 @@ public class MenuManager : MonoBehaviour
 
     public GameObject[] MenuPanels; // Assign the corresponding GameObjects for each button.
 
+    public TMP_Dropdown MainDropdown; // Reference to the main dropdown
+    // References to each of the secondary dropdowns
+    public GameObject SecondsDropdown;
+    public GameObject MinutesDropdown;
+    public GameObject HoursDropdown;
+    public GameObject DaysDropdown;
+    public GameObject MonthsDropdown;
+    public GameObject YearsDropdown;
 
     #endregion
 
@@ -39,6 +47,14 @@ public class MenuManager : MonoBehaviour
         {
             ToggleMenu();
         }
+    }
+
+    void Start()
+    {
+        // Add listener for when the main dropdown value changes
+        MainDropdown.onValueChanged.AddListener(delegate {
+            TMPDropdownValueChanged();
+        });
     }
 
     #region Main Menu Controller
@@ -171,4 +187,36 @@ public class MenuManager : MonoBehaviour
     }
 
     #endregion
+
+    void TMPDropdownValueChanged()
+    {
+        SecondsDropdown.SetActive(false);
+        MinutesDropdown.SetActive(false);
+        HoursDropdown.SetActive(false);
+        DaysDropdown.SetActive(false);
+        MonthsDropdown.SetActive(false);
+        YearsDropdown.SetActive(false);
+
+        switch (MainDropdown.options[MainDropdown.value].text)
+        {
+            case "Seconds":
+                SecondsDropdown.SetActive(true);
+                break;
+            case "Minutes":
+                MinutesDropdown.SetActive(true);
+                break;
+            case "Hours":
+                HoursDropdown.SetActive(true);
+                break;
+            case "Days":
+                DaysDropdown.SetActive(true);
+                break;
+            case "Months":
+                MonthsDropdown.SetActive(true);
+                break;
+            case "Years":
+                YearsDropdown.SetActive(true);
+                break;
+        }
+    }
 }

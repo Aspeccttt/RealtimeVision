@@ -38,11 +38,52 @@ public class CSVPlotter : MonoBehaviour
     public TextMeshProUGUI feedbackText;
     public List<string> selectedColumns = new List<string>(); // This now becomes global
     #endregion
+
+    #region Global Methods
+    private float FindMaxValue(string columnName)
+    {
+        float maxValue = Convert.ToSingle(pointList[0][columnName]);
+        foreach (var point in pointList)
+            maxValue = Mathf.Max(maxValue, Convert.ToSingle(point[columnName]));
+        return maxValue;
+    }
+
+    private float FindMinValue(string columnName)
+    {
+        float minValue = Convert.ToSingle(pointList[0][columnName]);
+        foreach (var point in pointList)
+            minValue = Mathf.Min(minValue, Convert.ToSingle(point[columnName]));
+        return minValue;
+    }
+
     public void SetData(List<Dictionary<string, object>> data)
     {
-        pointList = data; 
-        PopulateDropdowns(); 
+        pointList = data;
+        PopulateDropdowns();
         Debug.Log("Data has been initialized in the dropdown.");
+    }
+
+    public void CalculateAllPlotPoints()
+    {
+        xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
+        yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
+        zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
+    }
+
+    public float[] CalculatePlotPoints(string columnName)
+    {
+        float maxVal = FindMaxValue(columnName);
+        float minVal = FindMinValue(columnName);
+        float[] plotPoints = new float[10]; // Array to hold your plot points
+
+        float interval = (maxVal - minVal) / 9; // Divide the range into 9 intervals (for 10 points)
+
+        for (int i = 0; i < 10; i++)
+        {
+            plotPoints[i] = minVal + interval * i; // Calculate each plot point
+        }
+
+        return plotPoints; // Return the array of plot points
     }
 
     private void PopulateDropdowns()
@@ -60,6 +101,53 @@ public class CSVPlotter : MonoBehaviour
         lineGraphSelectedColumn.AddOptions(columnList);
     }
 
+    public void UpdatePlotPointTexts()
+    {
+        // Update X-axis plot points text
+        for (int i = 0; i < xPlotPoints.Length && i < xPlotTexts.Length; i++)
+        {
+            xPlotTexts[i].text = xPlotPoints[i].ToString("F2"); // "F2" formats to two decimal places
+        }
+
+        // Update Y-axis plot points text
+        for (int i = 0; i < yPlotPoints.Length && i < yPlotTexts.Length; i++)
+        {
+            yPlotTexts[i].text = yPlotPoints[i].ToString("F2");
+        }
+
+        // Update Z-axis plot points text
+        for (int i = 0; i < zPlotPoints.Length && i < zPlotTexts.Length; i++)
+        {
+            zPlotTexts[i].text = zPlotPoints[i].ToString("F2");
+        }
+    }
+
+    public float NormalizeData(Dictionary<string, object> data, string columnName)
+    {
+        float value = Convert.ToSingle(data[columnName]);
+        float max = FindMaxValue(columnName);
+        float min = FindMinValue(columnName);
+        return (value - min) / (max - min);
+    }
+
+    public void UpdateZAxisLabels(List<Color> colors)
+    {
+        for (int i = 0; i < zPlotTexts.Length; i++)
+        {
+            if (i < selectedColumns.Count)
+            {
+                zPlotTexts[i].text = selectedColumns[i];
+                zPlotTexts[i].color = colors[i]; // Set the text color
+            }
+            else
+            {
+                zPlotTexts[i].text = ""; // Clear any unused labels
+            }
+        }
+    }
+    #endregion
+
+    #region Scatterplot
     public void PlotData()
     {
         foreach (Transform child in PointHolder.transform)
@@ -103,43 +191,11 @@ public class CSVPlotter : MonoBehaviour
             dataPoint.name = $"{point[columnXName]} {point[columnYName]} {point[columnZName]}";
             dataPoint.GetComponent<Renderer>().material.color = new Color(x, y, z, 1.0f);
         }
-
         Debug.Log("Data has been plotted successfully.");
     }
+    #endregion
 
-
-    private float FindMaxValue(string columnName)
-    {
-        float maxValue = Convert.ToSingle(pointList[0][columnName]);
-        foreach (var point in pointList)
-            maxValue = Mathf.Max(maxValue, Convert.ToSingle(point[columnName]));
-        return maxValue;
-    }
-
-    private float FindMinValue(string columnName)
-    {
-        float minValue = Convert.ToSingle(pointList[0][columnName]);
-        foreach (var point in pointList)
-            minValue = Mathf.Min(minValue, Convert.ToSingle(point[columnName]));
-        return minValue;
-    }
-
-    public float[] CalculatePlotPoints(string columnName)
-    {
-        float maxVal = FindMaxValue(columnName);
-        float minVal = FindMinValue(columnName);
-        float[] plotPoints = new float[10]; // Array to hold your plot points
-
-        float interval = (maxVal - minVal) / 9; // Divide the range into 9 intervals (for 10 points)
-
-        for (int i = 0; i < 10; i++)
-        {
-            plotPoints[i] = minVal + interval * i; // Calculate each plot point
-        }
-
-        return plotPoints; // Return the array of plot points
-    }
-
+    #region Linegraph
     public void CalculateLineGraphPoints()
     {
         // Start with extreme values and narrow them down based on actual data
@@ -188,42 +244,6 @@ public class CSVPlotter : MonoBehaviour
         }
 
         yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
-    }
-
-    public void CalculateAllPlotPoints()
-    {
-        xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
-        yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
-        zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
-    }
-
-    public void UpdatePlotPointTexts()
-    {
-        // Update X-axis plot points text
-        for (int i = 0; i < xPlotPoints.Length && i < xPlotTexts.Length; i++)
-        {
-            xPlotTexts[i].text = xPlotPoints[i].ToString("F2"); // "F2" formats to two decimal places
-        }
-
-        // Update Y-axis plot points text
-        for (int i = 0; i < yPlotPoints.Length && i < yPlotTexts.Length; i++)
-        {
-            yPlotTexts[i].text = yPlotPoints[i].ToString("F2");
-        }
-
-        // Update Z-axis plot points text
-        for (int i = 0; i < zPlotPoints.Length && i < zPlotTexts.Length; i++)
-        {
-            zPlotTexts[i].text = zPlotPoints[i].ToString("F2");
-        }
-    }
-
-    public float NormalizeData(Dictionary<string, object> data, string columnName)
-    {
-        float value = Convert.ToSingle(data[columnName]);
-        float max = FindMaxValue(columnName);
-        float min = FindMinValue(columnName);
-        return (value - min) / (max - min);
     }
 
     public void LineGraphPlot()
@@ -312,6 +332,7 @@ public class CSVPlotter : MonoBehaviour
         return line; // Return the created line object
     }
 
+
     public void AddSelectedColumn()
     {
         // Get the currently selected option
@@ -336,20 +357,8 @@ public class CSVPlotter : MonoBehaviour
             feedbackText.text = "Column already added: " + selectedColumn;
         }
     }
+    #endregion
 
-    public void UpdateZAxisLabels(List<Color> colors)
-    {
-        for (int i = 0; i < zPlotTexts.Length; i++)
-        {
-            if (i < selectedColumns.Count)
-            {
-                zPlotTexts[i].text = selectedColumns[i];
-                zPlotTexts[i].color = colors[i]; // Set the text color
-            }
-            else
-            {
-                zPlotTexts[i].text = ""; // Clear any unused labels
-            }
-        }
-    }
+    #region Histogram
+    #endregion
 }
