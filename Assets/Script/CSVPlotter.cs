@@ -17,7 +17,7 @@ public class CSVPlotter : MonoBehaviour
     public float heightOffset = 1f;  // Points will spawn this much above the floor
 
     public GameObject PointPrefab;
-    public GameObject PointHolder; 
+    public GameObject PointHolder;
 
     public List<Dictionary<string, object>> pointList; // Holds data from CSV
 
@@ -94,11 +94,14 @@ public class CSVPlotter : MonoBehaviour
         dropdownY.ClearOptions();
         dropdownZ.ClearOptions();
         lineGraphSelectedColumn.ClearOptions();
+        histogramGraphSelectedColumn.ClearOptions();
 
         dropdownX.AddOptions(columnList);
         dropdownY.AddOptions(columnList);
         dropdownZ.AddOptions(columnList);
         lineGraphSelectedColumn.AddOptions(columnList);
+        histogramGraphSelectedColumn.AddOptions(columnList);
+
     }
 
     public void UpdatePlotPointTexts()
@@ -360,5 +363,100 @@ public class CSVPlotter : MonoBehaviour
     #endregion
 
     #region Histogram
-    #endregion
+    public TMP_Dropdown histogramGraphSelectedColumn;
+    public int histogramBins = 50;
+    private GameObject[] histogramBars;
+
+
+    public void AddHistogramSelectedColumn()
+    {
+        string selectedColumn = histogramGraphSelectedColumn.options[histogramGraphSelectedColumn.value].text;
+
+        // Check if this column has already been selected
+        if (!selectedColumns.Contains(selectedColumn))
+        {
+            selectedColumns.Add(selectedColumn);
+            feedbackText.text = $"Added: {String.Join(", ", selectedColumns)}";
+        }
+        else
+        {
+            feedbackText.text = $"Column already added: {selectedColumn}";
+        }
+    }
+
+
+    public void CalculateHistogramGraphPoints(out float minValue, out float maxValue, out int[] bins)
+    {
+        string columnName = histogramGraphSelectedColumn.options[histogramGraphSelectedColumn.value].text;
+
+        minValue = FindMinValue(columnName);
+        maxValue = FindMaxValue(columnName);
+        bins = new int[histogramBins];
+
+        float binSize = (maxValue - minValue) / histogramBins;
+
+        foreach (var point in pointList)
+        {
+            float value = Convert.ToSingle(point[columnName]);
+            int binIndex = Mathf.Clamp(Mathf.FloorToInt((value - minValue) / binSize), 0, histogramBins - 1);
+            bins[binIndex]++;
+        }
+    }
+
+    public void HistogramPlotGraph()
+    {
+        CalculateHistogramGraphPoints(out float minValue, out float maxValue, out int[] bins);
+        GenerateHistogramGraph(bins, minValue, maxValue);
+    }
+
+    private void GenerateHistogramGraph(int[] bins, float minValue, float maxValue)
+    {
+        // Clear existing bars
+        if (histogramBars != null)
+        {
+            foreach (GameObject bar in histogramBars)
+            {
+                Destroy(bar);
+            }
+        }
+
+        histogramBars = new GameObject[bins.Length];
+
+        Renderer floorRenderer = floor.GetComponent<Renderer>();
+        Vector3 floorSize = floorRenderer.bounds.size;
+        Vector3 floorPosition = floorRenderer.bounds.center;
+
+        // Calculate the bin width relative to the floor's dimensions
+        float binWidth = floorSize.x / bins.Length;
+        float binDepth = floorSize.z / bins.Length;
+        float maxCount = Mathf.Max(bins);
+
+        for (int i = 0; i < bins.Length; i++)
+        {
+            GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bar.transform.SetParent(PointHolder.transform, false);
+
+            // Calculate the bar size and position based on the floor's dimensions
+            float barHeight = (bins[i] / maxCount) * floorSize.y;
+            bar.transform.localScale = new Vector3(binWidth * 0.8f, barHeight, binDepth * 0.8f);
+            bar.transform.localPosition = new Vector3(
+                -floorSize.x / 2 + i * binWidth + binWidth / 2,
+                barHeight / 2 + heightOffset,
+                floorPosition.z
+            );
+
+            // Customize bar color or material
+            Renderer barRenderer = bar.GetComponent<Renderer>();
+            barRenderer.material.color = new Color(0.3f, 0.7f, 1.0f);
+
+            histogramBars[i] = bar;
+        }
+        #endregion
+    }
 }
+
+
+
+
+
+

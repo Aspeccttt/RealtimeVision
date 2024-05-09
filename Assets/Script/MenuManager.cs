@@ -143,6 +143,10 @@ public class MenuManager : MonoBehaviour
             Debug.Log(GetSelectedButtonName());
 
             GameManager.Instance.GetComponent<CSVPlotter>().PlotData();
+        } 
+        else if (GetSelectedButtonName() == "Histogram")
+        {
+            GameManager.Instance.GetComponent<CSVPlotter>().HistogramPlotGraph();
         }
 
         ToggleMenu();
