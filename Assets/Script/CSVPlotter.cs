@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 
 public class CSVPlotter : MonoBehaviour
 {
@@ -74,16 +75,16 @@ public class CSVPlotter : MonoBehaviour
     {
         float maxVal = FindMaxValue(columnName);
         float minVal = FindMinValue(columnName);
-        float[] plotPoints = new float[10]; // Array to hold your plot points
+        float[] plotPoints = new float[10]; 
 
-        float interval = (maxVal - minVal) / 9; // Divide the range into 9 intervals (for 10 points)
+        float interval = (maxVal - minVal) / 9; 
 
         for (int i = 0; i < 10; i++)
         {
-            plotPoints[i] = minVal + interval * i; // Calculate each plot point
+            plotPoints[i] = minVal + interval * i;
         }
 
-        return plotPoints; // Return the array of plot points
+        return plotPoints; 
     }
 
     private void PopulateDropdowns()
@@ -94,34 +95,30 @@ public class CSVPlotter : MonoBehaviour
         dropdownY.ClearOptions();
         dropdownZ.ClearOptions();
         lineGraphSelectedColumn.ClearOptions();
-        histogramGraphSelectedColumn.ClearOptions();
+        histogramXDropdown.ClearOptions();
+        histogramZDropdown.ClearOptions();
 
         dropdownX.AddOptions(columnList);
         dropdownY.AddOptions(columnList);
         dropdownZ.AddOptions(columnList);
         lineGraphSelectedColumn.AddOptions(columnList);
-        histogramGraphSelectedColumn.AddOptions(columnList);
+        histogramXDropdown.AddOptions(columnList);
+        histogramZDropdown.AddOptions(columnList);
 
     }
 
     public void UpdatePlotPointTexts()
     {
-        // Update X-axis plot points text
-        for (int i = 0; i < xPlotPoints.Length && i < xPlotTexts.Length; i++)
-        {
-            xPlotTexts[i].text = xPlotPoints[i].ToString("F2"); // "F2" formats to two decimal places
-        }
+        UpdateAxisLabels(xPlotPoints, xPlotTexts);
+        UpdateAxisLabels(yPlotPoints, yPlotTexts);
+        UpdateAxisLabels(zPlotPoints, zPlotTexts);
+    }
 
-        // Update Y-axis plot points text
-        for (int i = 0; i < yPlotPoints.Length && i < yPlotTexts.Length; i++)
+    private void UpdateAxisLabels(float[] plotPoints, TextMeshProUGUI[] plotTexts)
+    {
+        for (int i = 0; i < plotPoints.Length && i < plotTexts.Length; i++)
         {
-            yPlotTexts[i].text = yPlotPoints[i].ToString("F2");
-        }
-
-        // Update Z-axis plot points text
-        for (int i = 0; i < zPlotPoints.Length && i < zPlotTexts.Length; i++)
-        {
-            zPlotTexts[i].text = zPlotPoints[i].ToString("F2");
+            plotTexts[i].text = plotPoints[i].ToString("F2");
         }
     }
 
@@ -338,122 +335,162 @@ public class CSVPlotter : MonoBehaviour
 
     public void AddSelectedColumn()
     {
-        // Get the currently selected option
         string selectedColumn = lineGraphSelectedColumn.options[lineGraphSelectedColumn.value].text;
 
-        // Debugging: Print current contents of selectedColumns
         Debug.Log("Current selected columns: " + String.Join(", ", selectedColumns));
 
-        // Check if this column has already been selected
         if (!selectedColumns.Contains(selectedColumn))
         {
-            // Add the column to the list and update the feedback text
             selectedColumns.Add(selectedColumn);
             feedbackText.text = $"Added:" + String.Join(", ", selectedColumns);
 
-            // Debugging: Print updated contents of selectedColumns
             Debug.Log("Updated selected columns: " + String.Join(", ", selectedColumns));
         }
         else
         {
-            // Inform the user that this column is already added
             feedbackText.text = "Column already added: " + selectedColumn;
         }
     }
     #endregion
 
     #region Histogram
-    public TMP_Dropdown histogramGraphSelectedColumn;
-    public int histogramBins = 50;
-    private GameObject[] histogramBars;
+    public TMP_Dropdown histogramXDropdown, histogramZDropdown;
+    public int numberOfBins = 10; 
+    public GameObject plotParent;
+    private int[,] bins;
 
-
-    public void AddHistogramSelectedColumn()
+    public void GenerateHistogram()
     {
-        string selectedColumn = histogramGraphSelectedColumn.options[histogramGraphSelectedColumn.value].text;
-
-        // Check if this column has already been selected
-        if (!selectedColumns.Contains(selectedColumn))
+        if (pointList == null || pointList.Count == 0)
         {
-            selectedColumns.Add(selectedColumn);
-            feedbackText.text = $"Added: {String.Join(", ", selectedColumns)}";
+            Debug.Log("No data available to generate histogram.");
+            return;
         }
-        else
+
+        string xColumn = histogramXDropdown.options[histogramXDropdown.value].text;
+        string zColumn = histogramZDropdown.options[histogramZDropdown.value].text;
+
+        var xValues = pointList.Select(dict => Convert.ToSingle(dict[xColumn])).ToList();
+        var zValues = pointList.Select(dict => Convert.ToSingle(dict[zColumn])).ToList();
+
+        float xMin = xValues.Min();
+        float xMax = xValues.Max();
+        float zMin = zValues.Min();
+        float zMax = zValues.Max();
+
+        float xRange = (xMax - xMin) / numberOfBins;
+        float zRange = (zMax - zMin) / numberOfBins;
+
+        bins = new int[numberOfBins, numberOfBins];
+
+        foreach (var dict in pointList)
         {
-            feedbackText.text = $"Column already added: {selectedColumn}";
+            int xIndex = Mathf.Clamp(Mathf.FloorToInt((Convert.ToSingle(dict[xColumn]) - xMin) / xRange), 0, numberOfBins - 1);
+            int zIndex = Mathf.Clamp(Mathf.FloorToInt((Convert.ToSingle(dict[zColumn]) - zMin) / zRange), 0, numberOfBins - 1);
+            bins[xIndex, zIndex]++;
         }
-    }
 
+        // Find maximum count in bins for scaling Y-axis
+        int maxCount = bins.Cast<int>().Max();
 
-    public void CalculateHistogramGraphPoints(out float minValue, out float maxValue, out int[] bins)
-    {
-        string columnName = histogramGraphSelectedColumn.options[histogramGraphSelectedColumn.value].text;
+        // Update Y-axis labels based on max count
+        UpdateHistogramYAxisLabels(maxCount);
 
-        minValue = FindMinValue(columnName);
-        maxValue = FindMaxValue(columnName);
-        bins = new int[histogramBins];
-
-        float binSize = (maxValue - minValue) / histogramBins;
-
-        foreach (var point in pointList)
+        // Clear previous histogram bars
+        foreach (Transform child in PointHolder.transform)
         {
-            float value = Convert.ToSingle(point[columnName]);
-            int binIndex = Mathf.Clamp(Mathf.FloorToInt((value - minValue) / binSize), 0, histogramBins - 1);
-            bins[binIndex]++;
+            Destroy(child.gameObject);
         }
-    }
 
-    public void HistogramPlotGraph()
-    {
-        CalculateHistogramGraphPoints(out float minValue, out float maxValue, out int[] bins);
-        GenerateHistogramGraph(bins, minValue, maxValue);
-    }
+        Vector3 plotDimensions = new Vector3(9f, plotParent.transform.localScale.y - 1, 9f);
+        //plotParent.transform.position = new Vector3(2, -2, -1);
 
-    private void GenerateHistogramGraph(int[] bins, float minValue, float maxValue)
-    {
-        // Clear existing bars
-        if (histogramBars != null)
+        // Create new histogram bars
+        for (int i = 0; i < numberOfBins; i++)
         {
-            foreach (GameObject bar in histogramBars)
+            for (int j = 0; j < numberOfBins; j++)
             {
-                Destroy(bar);
+                GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                float normalizedX = (float)i / (numberOfBins - 1) * plotDimensions.x;
+                float normalizedZ = (float)j / (numberOfBins - 1) * plotDimensions.z;
+                Vector3 barPosition = new Vector3(normalizedX, bins[i, j] * 0.5f, normalizedZ) + PointHolder.transform.position - plotDimensions / 2;
+
+                bar.transform.position = barPosition;
+                bar.transform.localScale = new Vector3(plotDimensions.x / numberOfBins * 0.9f, bins[i, j], plotDimensions.z / numberOfBins * 0.9f);
+                bar.transform.parent = PointHolder.transform;
+
+                // Color interpolation based on count
+                float intensity = (float)bins[i, j] / maxCount;
+                bar.GetComponent<Renderer>().material.color = new Color(0f, intensity, 0f, 1f);  // Green intensity scales with count
+
+                float xRangeStart = xMin + i * xRange;
+                float xRangeEnd = xRangeStart + xRange;
+                float zRangeStart = zMin + j * zRange;
+                float zRangeEnd = zRangeStart + zRange;
+                bar.name = $"{xColumn} [{xRangeStart:F2}-{xRangeEnd:F2}], {zColumn} [{zRangeStart:F2}-{zRangeEnd:F2}]: {bins[i, j]}";
+                bar.transform.tag = "DataPoint";
+                bar.transform.parent.tag = "Histogram";
             }
         }
+    }
 
-        histogramBars = new GameObject[bins.Length];
+    public void CalculateHistogramPlotPoints()
+    {
+        string xColumn = histogramXDropdown.options[histogramXDropdown.value].text;
+        string zColumn = histogramZDropdown.options[histogramZDropdown.value].text;
 
-        Renderer floorRenderer = floor.GetComponent<Renderer>();
-        Vector3 floorSize = floorRenderer.bounds.size;
-        Vector3 floorPosition = floorRenderer.bounds.center;
+        xPlotPoints = CalculateHistogramAxisPoints(xColumn);
+        zPlotPoints = CalculateHistogramAxisPoints(zColumn);
 
-        // Calculate the bin width relative to the floor's dimensions
-        float binWidth = floorSize.x / bins.Length;
-        float binDepth = floorSize.z / bins.Length;
-        float maxCount = Mathf.Max(bins);
+        // Update UI elements or other related components
+        UpdateAxisLabels(xPlotPoints, xPlotTexts);
+        UpdateAxisLabels(zPlotPoints, zPlotTexts);
 
-        for (int i = 0; i < bins.Length; i++)
+    }
+
+    private float[] CalculateHistogramAxisPoints(string columnName)
+    {
+        float maxVal = FindMaxValue(columnName);
+        float minVal = FindMinValue(columnName);
+        float[] plotPoints = new float[10];  // This number can be dynamic based on UI or other settings
+
+        float interval = (maxVal - minVal) / 9; // Calculate 10 intervals (for 10 points)
+
+        for (int i = 0; i < 10; i++)
         {
-            GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            bar.transform.SetParent(PointHolder.transform, false);
-
-            // Calculate the bar size and position based on the floor's dimensions
-            float barHeight = (bins[i] / maxCount) * floorSize.y;
-            bar.transform.localScale = new Vector3(binWidth * 0.8f, barHeight, binDepth * 0.8f);
-            bar.transform.localPosition = new Vector3(
-                -floorSize.x / 2 + i * binWidth + binWidth / 2,
-                barHeight / 2 + heightOffset,
-                floorPosition.z
-            );
-
-            // Customize bar color or material
-            Renderer barRenderer = bar.GetComponent<Renderer>();
-            barRenderer.material.color = new Color(0.3f, 0.7f, 1.0f);
-
-            histogramBars[i] = bar;
+            plotPoints[i] = minVal + interval * i;
         }
-        #endregion
+
+        return plotPoints;
+    }
+
+    private void CalculateHistogramYAxisPoints()
+    {
+        // Assuming bins[] has been filled and exists at this scope level
+        int maxCount = bins.Cast<int>().Max(); // Find the maximum count across all bins
+
+        yPlotPoints = new float[10];
+        float interval = maxCount / 10.0f;
+
+        for (int i = 0; i < 10; i++)
+        {
+            yPlotPoints[i] = (i + 1) * interval;
+        }
+    }
+
+    private void UpdateHistogramYAxisLabels(int maxCount)
+    {
+        float interval = maxCount / 10.0f; // Divide the max count by 10 to find interval steps for labels
+        yPlotPoints = new float[10];
+        for (int i = 0; i < 10; i++)
+        {
+            yPlotPoints[i] = (i + 1) * interval;
+            yPlotTexts[i].text = $"{(i + 1) * interval:N0}";  // Format as integer (no decimal points)
+        }
     }
 }
+    #endregion
+
 
 
 

@@ -510,6 +510,11 @@ public class FirstPersonController : MonoBehaviour
 
                     if (hit.transform.parent.tag == "LineGraph")
                         ShowInfoPanel(hit.point, dataPointColor, dataName, "Title", "Value", "Day:");
+
+                    if (hit.transform.parent.tag == "Histogram")
+                    {
+                        ShowInfoPanel(hit.point, dataPointColor, dataName, "Title", "Bin Range", "Count");
+                    }
                 }
             }
         }
@@ -560,16 +565,34 @@ public class FirstPersonController : MonoBehaviour
         backgroundImage.color = dataPointColor;
 
         string[] parts = dataName.Split(' '); // This assumes dataName format is "x y z"
-        if (parts.Length >= 3)
+
+        if(infoPanel.transform.parent.tag == "Histogram")
         {
-            TMP_Text[] infoTexts = infoPanel.GetComponentsInChildren<TMP_Text>();
-            // Now assigning the parts of the dataName to the respective TMP_Text components
-            infoTexts[1].text = CX; // ColumnX name (you might want to fetch actual name instead of hardcoding)
-            infoTexts[2].text = parts[0]; // ColumnX Data
-            infoTexts[3].text = CY; // ColumnY name
-            infoTexts[4].text = parts[1]; // ColumnY Data
-            infoTexts[5].text = CZ; // ColumnZ name
-            infoTexts[6].text = parts[2]; // ColumnZ Data
+            if (parts.Length >= 3)
+            {
+                TMP_Text[] infoTexts = infoPanel.GetComponentsInChildren<TMP_Text>();
+                // Now assigning the parts of the dataName to the respective TMP_Text components
+                infoTexts[1].text = CX; // ColumnX name (you might want to fetch actual name instead of hardcoding)
+                infoTexts[2].text = parts[0]; // ColumnX Data
+                infoTexts[3].text = CY; // ColumnY name
+                infoTexts[4].text = parts[1]; // ColumnY Data
+                infoTexts[5].text = CZ; // ColumnZ name
+                infoTexts[6].text = parts[6]; // ColumnZ Data
+            }
+        }
+        else
+        {
+            if (parts.Length >= 3)
+            {
+                TMP_Text[] infoTexts = infoPanel.GetComponentsInChildren<TMP_Text>();
+                // Now assigning the parts of the dataName to the respective TMP_Text components
+                infoTexts[1].text = CX; // ColumnX name (you might want to fetch actual name instead of hardcoding)
+                infoTexts[2].text = parts[0]; // ColumnX Data
+                infoTexts[3].text = CY; // ColumnY name
+                infoTexts[4].text = parts[1]; // ColumnY Data
+                infoTexts[5].text = CZ; // ColumnZ name
+                infoTexts[6].text = parts[2]; // ColumnZ Data
+            }
         }
 
         // Create a LineRenderer component dynamically and set the colour as the same as the datapoint.

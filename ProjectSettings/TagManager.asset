@@ -11,6 +11,7 @@ TagManager:
   - DraggablePanel
   - LineGraph
   - Scatterplot
+  - Histogram
   layers:
   - Default
   - TransparentFX

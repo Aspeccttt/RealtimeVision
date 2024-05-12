@@ -146,7 +146,15 @@ public class MenuManager : MonoBehaviour
         } 
         else if (GetSelectedButtonName() == "Histogram")
         {
-            GameManager.Instance.GetComponent<CSVPlotter>().HistogramPlotGraph();
+            GameManager.Instance.GetComponent<CSVPlotter>().columnXName = xDropdown.options[xDropdown.value].text;
+            GameManager.Instance.GetComponent<CSVPlotter>().columnZName = zDropdown.options[zDropdown.value].text;
+
+            xTitle.text = GameManager.Instance.GetComponent <CSVPlotter>().columnXName;
+            zTitle.text = GameManager.Instance.GetComponent<CSVPlotter>().columnZName;
+            yTitle.text = "Count";
+
+            GameManager.Instance.GetComponent<CSVPlotter>().CalculateHistogramPlotPoints();
+            GameManager.Instance.GetComponent<CSVPlotter>().GenerateHistogram();
         }
 
         ToggleMenu();
