@@ -196,13 +196,14 @@ public class CSVPlotter : MonoBehaviour
     #endregion
 
     #region Linegraph
+    public GameObject[] lineGraphReferencePoints;
+
+
     public void CalculateLineGraphPoints()
     {
-        // Start with extreme values and narrow them down based on actual data
         float globalMax = float.MinValue;
         float globalMin = float.MaxValue;
 
-        // Go through all selected columns to find global min and max
         foreach (string column in selectedColumns)
         {
             float localMax = FindMaxValue(column);
@@ -256,6 +257,9 @@ public class CSVPlotter : MonoBehaviour
 
         PointHolder.transform.tag = "LineGraph";
 
+        // Rotate PointHolder by 90 degrees around the Y-axis
+        PointHolder.transform.rotation = Quaternion.Euler(0, 90, 0);
+
         // Find global min and max values for the Y axis across all selected columns
         float globalMin = float.MaxValue;
         float globalMax = float.MinValue;
@@ -270,11 +274,11 @@ public class CSVPlotter : MonoBehaviour
             }
         }
 
-        Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
-        Vector3 floorPosition = floor.transform.position;
-
         // Store generated colors for reuse with text labels
         List<Color> generatedColors = new List<Color>();
+
+        // Fetch X labels
+        float[] xLabels = FetchXValues();
 
         for (int columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
         {
@@ -284,20 +288,25 @@ public class CSVPlotter : MonoBehaviour
             string columnName = selectedColumns[columnIndex];
             List<Vector3> linePoints = new List<Vector3>();
 
-            // Generate 10 plot points for the current column
-            for (int day = 1; day <= 10; day++)
+            // Get the reference point for this column group
+            Vector3 referencePoint = lineGraphReferencePoints[columnIndex].transform.position;
+
+            // Generate plot points for the current column
+            for (int i = 0; i < pointList.Count && i < xLabels.Length; i++)
             {
-                float yValue = Convert.ToSingle(pointList[day - 1][columnName]); // This remains unchanged
+                float zValue = xLabels[i]; // Use X label value for Z position
+                float yValue = Convert.ToSingle(pointList[i][columnName]);
                 float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
 
-                // Adjust the calculation here for the Z-coordinate
-                // We change how 'day' influences 'plotPosition.z' to reverse the plotting order
+                // Calculate plot position using Z label
                 Vector3 plotPosition = new Vector3(
-                    floorPosition.x + 2 + (columnIndex * 1),
-                    floorPosition.y + (normalizedY * plotScale) + heightOffset,
-                    floorPosition.z + ((10f - day) / 10f * floorSize.z) - (floorSize.z / 2)  // Invert the day's influence
+                    referencePoint.x, // X position based on the reference point
+                    referencePoint.y + (normalizedY * plotScale) + heightOffset, // Y position based on value
+                    referencePoint.z + ((zValue - 1) / 9f * floor.GetComponent<Renderer>().bounds.size.z) - (floor.GetComponent<Renderer>().bounds.size.z / 2) // Z position based on xLabels
                 );
 
+                // Ensure plotPosition stays within the bounds of the floor
+                plotPosition.z = Mathf.Clamp(plotPosition.z, referencePoint.z - floor.GetComponent<Renderer>().bounds.size.z / 2, referencePoint.z + floor.GetComponent<Renderer>().bounds.size.z / 2);
 
                 linePoints.Add(plotPosition);
 
@@ -307,15 +316,22 @@ public class CSVPlotter : MonoBehaviour
                 dataPoint.GetComponent<Renderer>().material.color = randomColor; // Set the data point's color
 
                 string dataValue = yValue.ToString("F2");
-                dataPoint.name = $"{columnName} {dataValue} {day}";
+                dataPoint.name = $"{columnName} {dataValue} {zValue}";
             }
 
             // Draw the line for the current column with the generated random color
             GameObject line = DrawLine(linePoints, randomColor);
             line.transform.parent = PointHolder.transform; // Set parent for the line as well
         }
+
         // Update Z-axis labels with the generated colors
         UpdateZAxisLabels(generatedColors);
+    }
+
+    // Helper method to fetch X labels from xPlotTexts
+    private float[] FetchXValues()
+    {
+        return xPlotTexts.Select(x => float.Parse(x.text)).ToArray();
     }
 
     private GameObject DrawLine(List<Vector3> points, Color color)
