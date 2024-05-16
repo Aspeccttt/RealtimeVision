@@ -38,6 +38,9 @@ public class FirstPersonController : MonoBehaviour
     private Vector3 offset;
     private Vector3 originalPanelPosition;
     #endregion
+
+    private DatabaseManager dbManager;
+
     private void initializeSideVariables()
     {
         GameObject cameraGameObject = GameObject.FindGameObjectWithTag(targetCamera);
@@ -222,6 +225,8 @@ public class FirstPersonController : MonoBehaviour
 
     void Start()
     {
+        dbManager = GameManager.Instance.GetComponent<DatabaseManager>();
+
         if (lockCursor)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -504,6 +509,7 @@ public class FirstPersonController : MonoBehaviour
                     Debug.Log("Hit a DataPoint");
                     Color dataPointColor = hit.collider.GetComponent<Renderer>()?.material.color ?? Color.white;
                     string dataName = hit.collider.gameObject.name;
+                    dbManager.LogDatapointClick(dataName);
                     //Debug.Log("Parent's Tag: " + hit.transform.parent.tag + " / " + hit.transform.name.ToString());
                     if (hit.transform.parent.tag == "Scatterplot")
                         ShowInfoPanel(hit.point, dataPointColor, dataName, GameManager.Instance.GetComponent<CSVPlotter>().columnXName, GameManager.Instance.GetComponent<CSVPlotter>().columnYName, GameManager.Instance.GetComponent<CSVPlotter>().columnZName);

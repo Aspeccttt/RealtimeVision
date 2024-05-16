@@ -8,6 +8,12 @@ public class CSVUploader : MonoBehaviour
 {
     public string path;
     public CSVPlotter csvPlotter;
+    private DatabaseManager dbManager;
+
+    void Start()
+    {
+        dbManager = GameManager.Instance.GetComponent<DatabaseManager>();
+    }
 
     public void OpenFileExplorer()
     {
@@ -34,17 +40,14 @@ public class CSVUploader : MonoBehaviour
             }
             else
             {
-                // CSV data successfully loaded, now parse it
                 string csvContent = www.downloadHandler.text;
                 List<Dictionary<string, object>> parsedData = CSVReader.ReadFromString(csvContent);
 
-                // Check if the data is valid
                 if (parsedData != null && parsedData.Count > 0)
                 {
-                    // If csvPlotter is assigned, set the data for plotting
                     if (csvPlotter != null)
                     {
-                        csvPlotter.SetData(parsedData);
+                        csvPlotter.SetData(parsedData, path);
 
                         GameManager.Instance.GetComponent<MenuManager>().CSVLoaded();
                     }

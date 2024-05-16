@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "117335067046",
+    "project_id": "realtimedata-5bfca",
+    "storage_bucket": "realtimedata-5bfca.appspot.com",
+    "firebase_url": "https://realtimedata-5bfca-default-rtdb.firebaseio.com/"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:117335067046:android:10c8132f25605c7c64a767",
+        "android_client_info": {
+          "package_name": "com.realtimedata.firebasedb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmQBf-c-P-KAooO4kWSg44ovDradyPxWE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

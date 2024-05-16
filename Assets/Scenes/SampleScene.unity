@@ -16338,6 +16338,7 @@ GameObject:
   - component: {fileID: 1162265622}
   - component: {fileID: 1162265621}
   - component: {fileID: 1162265623}
+  - component: {fileID: 1162265624}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -16500,6 +16501,18 @@ MonoBehaviour:
   histogramZDropdown: {fileID: 1706574671}
   numberOfBins: 10
   plotParent: {fileID: 1807752036}
+--- !u!114 &1162265624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1162265616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84b96951540c40b4794e14eb08069335, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1168518074
 GameObject:
   m_ObjectHideFlags: 0

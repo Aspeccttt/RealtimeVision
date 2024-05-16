@@ -6,6 +6,10 @@ using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
+    #region db Variables
+    private DatabaseManager db;
+    #endregion
+
     #region Global Variables
     public GameObject waitingUIPanel;
     public GameObject uploadedUIPanel;
@@ -41,6 +45,9 @@ public class MenuManager : MonoBehaviour
 
     #endregion
 
+
+    private FirstPersonController firstPersonController;
+
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -51,6 +58,9 @@ public class MenuManager : MonoBehaviour
 
     void Start()
     {
+        db = GameManager.Instance.GetComponent<DatabaseManager>();
+        firstPersonController = GameManager.Instance.GetComponent<FirstPersonController>();
+
         // Add listener for when the main dropdown value changes
         MainDropdown.onValueChanged.AddListener(delegate {
             TMPDropdownValueChanged();
@@ -117,8 +127,14 @@ public class MenuManager : MonoBehaviour
 
     public void OnDoneButtonClicked()
     {
+
+        string plotType = GetSelectedButtonName();
+
+
         if (GetSelectedButtonName() == "Linegraph")
         {
+
+
             xTitle.text = "Time (days)";
             yTitle.text = "Values";
             zTitle.text = "Selected Columns";
@@ -129,6 +145,7 @@ public class MenuManager : MonoBehaviour
         }
         else if (GetSelectedButtonName() == "Scatterplot")
         {
+
             GameManager.Instance.GetComponent<CSVPlotter>().columnXName = xDropdown.options[xDropdown.value].text;
             GameManager.Instance.GetComponent<CSVPlotter>().columnYName = yDropdown.options[yDropdown.value].text;
             GameManager.Instance.GetComponent<CSVPlotter>().columnZName = zDropdown.options[zDropdown.value].text;
@@ -146,6 +163,7 @@ public class MenuManager : MonoBehaviour
         } 
         else if (GetSelectedButtonName() == "Histogram")
         {
+
             GameManager.Instance.GetComponent<CSVPlotter>().columnXName = xDropdown.options[xDropdown.value].text;
             GameManager.Instance.GetComponent<CSVPlotter>().columnZName = zDropdown.options[zDropdown.value].text;
 

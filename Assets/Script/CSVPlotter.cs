@@ -7,6 +7,13 @@ using System.Linq;
 
 public class CSVPlotter : MonoBehaviour
 {
+    #region db Variables
+
+    private DatabaseManager db;
+    private string currentCSV;
+
+    #endregion
+
     #region Global Variables
 
     public string columnXName;
@@ -41,6 +48,12 @@ public class CSVPlotter : MonoBehaviour
     #endregion
 
     #region Global Methods
+
+    private void Start()
+    {
+        db = GameManager.Instance.GetComponent<DatabaseManager>();
+    }
+
     private float FindMaxValue(string columnName)
     {
         float maxValue = Convert.ToSingle(pointList[0][columnName]);
@@ -57,11 +70,17 @@ public class CSVPlotter : MonoBehaviour
         return minValue;
     }
 
-    public void SetData(List<Dictionary<string, object>> data)
+    public void SetData(List<Dictionary<string, object>> data, string csvName)
     {
         pointList = data;
+        currentCSV = csvName;
         PopulateDropdowns();
         Debug.Log("Data has been initialized in the dropdown.");
+    }
+
+    public void StopPlot(string plotType)
+    {
+        db.StopPlotTimer(plotType);
     }
 
     public void CalculateAllPlotPoints()
@@ -154,6 +173,8 @@ public class CSVPlotter : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+
+        db.StartPlotTimer("Scatterplot", currentCSV);
 
         PointHolder.transform.tag = "Scatterplot";
 
@@ -254,6 +275,8 @@ public class CSVPlotter : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+
+        db.StartPlotTimer("Linegraph", currentCSV);
 
         PointHolder.transform.tag = "LineGraph";
 
@@ -377,6 +400,8 @@ public class CSVPlotter : MonoBehaviour
 
     public void GenerateHistogram()
     {
+        db.StartPlotTimer("Histogram", currentCSV);
+
         if (pointList == null || pointList.Count == 0)
         {
             Debug.Log("No data available to generate histogram.");
