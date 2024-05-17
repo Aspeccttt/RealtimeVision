@@ -9750,6 +9750,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4459864850019384738, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
   m_PrefabInstance: {fileID: 1700519357}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &596187291 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4459864850019384740, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+  m_PrefabInstance: {fileID: 1700519357}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d90ba6530d9bfda47abb4610956b2f44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &604548778
 GameObject:
   m_ObjectHideFlags: 0
@@ -16414,6 +16425,7 @@ MonoBehaviour:
   DaysDropdown: {fileID: 2070058136}
   MonthsDropdown: {fileID: 1168518074}
   YearsDropdown: {fileID: 1785725741}
+  firstPersonController: {fileID: 596187291}
 --- !u!114 &1162265622
 MonoBehaviour:
   m_ObjectHideFlags: 0

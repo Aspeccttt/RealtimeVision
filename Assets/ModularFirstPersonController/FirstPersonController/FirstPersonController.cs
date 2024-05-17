@@ -40,6 +40,8 @@ public class FirstPersonController : MonoBehaviour
     #endregion
 
     private DatabaseManager dbManager;
+    private Dictionary<GameObject, (LineRenderer lineRenderer, Transform dataPoint)> infoPanels = new Dictionary<GameObject, (LineRenderer, Transform)>();
+
 
     private void initializeSideVariables()
     {
@@ -458,29 +460,28 @@ public class FirstPersonController : MonoBehaviour
 
             foreach (RaycastResult result in uiHits)
             {
-                if (LayerMask.LayerToName(result.gameObject.layer) == "UI") // Replace "UI" with your actual layer name
+                if (LayerMask.LayerToName(result.gameObject.layer) == "UI")
                 {
-                    //Debug.Log("UI Hit: " + result.gameObject.name);
-
-                    if (result.gameObject.CompareTag("CloseButton")) // Ensure your close button has the tag "CloseButton"
+                    if (result.gameObject.CompareTag("CloseButton"))
                     {
                         Debug.Log("Close button was clicked.");
-                        Transform panel = result.gameObject.transform.parent; // Modify this according to your hierarchy
-                        while (panel != null && !panel.CompareTag("OrientableUI")) // Use the actual tag of your panel
+                        Transform panel = result.gameObject.transform.parent;
+                        while (panel != null && !panel.CompareTag("OrientableUI"))
                         {
                             panel = panel.parent;
                         }
-                        if (panel != null) Destroy(panel.gameObject) ;
+                        if (panel != null)
+                        {
+                            Destroy(panel.gameObject);
+                            infoPanels.Remove(panel.gameObject);
+                        }
                         return;
                     }
 
-                    // Handling the draggable panel
                     if (result.gameObject.CompareTag("DraggablePanel"))
                     {
                         Debug.Log("Initiated Draggable Panel Part");
-
-                        // Find the parent panel marked as "OrientableUI"
-                        Transform panel = result.gameObject.transform.parent; // Starting point for search
+                        Transform panel = result.gameObject.transform.parent;
                         while (panel != null && !panel.CompareTag("OrientableUI"))
                         {
                             panel = panel.parent;
@@ -493,47 +494,38 @@ public class FirstPersonController : MonoBehaviour
                             Vector3 panelScreenPosition = playerCamera.WorldToScreenPoint(selectedPanel.transform.position);
                             offset = selectedPanel.transform.position - playerCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, panelScreenPosition.z));
                             isDragging = true;
+
+                            if (infoPanels.TryGetValue(selectedPanel, out var infoPanelData))
+                            {
+                                currentLineRenderer = infoPanelData.lineRenderer;
+                            }
                         }
-                        return; // Exit the loop to avoid deactivating the panel
+                        return;
                     }
                 }
             }
 
-            // Regular object raycasting if no UI was clicked
             if (Physics.Raycast(ray, out hit, Mathf.Infinity))
             {
-                //Debug.Log("Raycast hit: " + hit.collider.name);
-
+                hasHit = true;
                 if (hit.collider.CompareTag("DataPoint"))
                 {
                     Debug.Log("Hit a DataPoint");
                     Color dataPointColor = hit.collider.GetComponent<Renderer>()?.material.color ?? Color.white;
                     string dataName = hit.collider.gameObject.name;
                     dbManager.LogDatapointClick(dataName);
-                    //Debug.Log("Parent's Tag: " + hit.transform.parent.tag + " / " + hit.transform.name.ToString());
-                    if (hit.transform.parent.tag == "Scatterplot")
-                        ShowInfoPanel(hit.point, dataPointColor, dataName, GameManager.Instance.GetComponent<CSVPlotter>().columnXName, GameManager.Instance.GetComponent<CSVPlotter>().columnYName, GameManager.Instance.GetComponent<CSVPlotter>().columnZName);
 
-                    if (hit.transform.parent.tag == "LineGraph")
-                        ShowInfoPanel(hit.point, dataPointColor, dataName, "Title", "Value", "Day:");
-
-                    if (hit.transform.parent.tag == "Histogram")
-                    {
-                        ShowInfoPanel(hit.point, dataPointColor, dataName, "Title", "Bin Range", "Count");
-                    }
+                    ShowInfoPanel(hit.point, dataPointColor, dataName, GameManager.Instance.GetComponent<CSVPlotter>().columnXName, GameManager.Instance.GetComponent<CSVPlotter>().columnYName, GameManager.Instance.GetComponent<CSVPlotter>().columnZName);
                 }
             }
         }
 
-        // Dragging logic
         if (isDragging)
         {
             if (dragAnchor != null && selectedPanel != null)
             {
-                // Set the panel position to the anchor position
                 selectedPanel.transform.position = dragAnchor.transform.position;
 
-                // If there is an active line renderer, update its end position to follow the panel
                 if (currentLineRenderer != null)
                 {
                     Vector3[] positions = new Vector3[2];
@@ -543,17 +535,29 @@ public class FirstPersonController : MonoBehaviour
                 }
             }
 
-            // Release the drag on mouse up
             if (Input.GetMouseButtonUp(0))
             {
                 isDragging = false;
                 selectedPanel = null;
-                currentLineRenderer = null; // Clear the reference as the dragging has stopped
+                currentLineRenderer = null;
+            }
+        }
+
+        foreach (var kvp in infoPanels)
+        {
+            var (lineRenderer, dataPoint) = kvp.Value;
+            if (lineRenderer != null && dataPoint != null)
+            {
+                Vector3[] positions = new Vector3[2];
+                lineRenderer.GetPositions(positions);
+                positions[0] = dataPoint.position;
+                positions[1] = kvp.Key.transform.position;
+                lineRenderer.SetPositions(positions);
             }
         }
     }
 
-    private void ShowInfoPanel(Vector3 hitPoint, Color dataPointColor, string dataName,string CX, string CY, string CZ)
+    private void ShowInfoPanel(Vector3 hitPoint, Color dataPointColor, string dataName, string CX, string CY, string CZ)
     {
         Vector3 forwardDirection = playerCamera.transform.forward;
         forwardDirection.y = 0; // Adjust if you want the panel to align differently
@@ -572,7 +576,7 @@ public class FirstPersonController : MonoBehaviour
 
         string[] parts = dataName.Split(' '); // This assumes dataName format is "x y z"
 
-        if(infoPanel.transform.parent.tag == "Histogram")
+        if (infoPanel.transform.parent.tag == "Histogram")
         {
             if (parts.Length >= 3)
             {
@@ -610,7 +614,18 @@ public class FirstPersonController : MonoBehaviour
         currentLineRenderer.positionCount = 2;
         currentLineRenderer.SetPositions(new Vector3[] { hitPoint, panelPosition });
 
+        infoPanels[infoPanel] = (currentLineRenderer, null); // Store the LineRenderer and the panel without dataPoint
+
         uiArrayCounter();
+    }
+
+    public void DespawnAllInfoPanels()
+    {
+        foreach (var kvp in infoPanels)
+        {
+            Destroy(kvp.Key);
+        }
+        infoPanels.Clear();
     }
 
     void FixedUpdate()

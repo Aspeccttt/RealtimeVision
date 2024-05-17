@@ -43,10 +43,8 @@ public class MenuManager : MonoBehaviour
     public GameObject MonthsDropdown;
     public GameObject YearsDropdown;
 
+    public FirstPersonController firstPersonController;
     #endregion
-
-
-    private FirstPersonController firstPersonController;
 
     private void Update()
     {
@@ -59,7 +57,8 @@ public class MenuManager : MonoBehaviour
     void Start()
     {
         db = GameManager.Instance.GetComponent<DatabaseManager>();
-        firstPersonController = GameManager.Instance.GetComponent<FirstPersonController>();
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        firstPersonController = player.GetComponentInChildren<FirstPersonController>();
 
         // Add listener for when the main dropdown value changes
         MainDropdown.onValueChanged.AddListener(delegate {
@@ -127,14 +126,12 @@ public class MenuManager : MonoBehaviour
 
     public void OnDoneButtonClicked()
     {
-
+        firstPersonController.DespawnAllInfoPanels();
         string plotType = GetSelectedButtonName();
 
 
         if (GetSelectedButtonName() == "Linegraph")
         {
-
-
             xTitle.text = "Time (days)";
             yTitle.text = "Values";
             zTitle.text = "Selected Columns";
