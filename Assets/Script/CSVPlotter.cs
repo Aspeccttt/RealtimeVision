@@ -401,46 +401,34 @@ public class CSVPlotter : MonoBehaviour
         }
 
         List<Color> generatedColors = new List<Color>();
-        float xInterval = floor.GetComponent<Renderer>().bounds.size.z / (pointList.Count - 1);
+        float zInterval = floor.GetComponent<Renderer>().bounds.size.z / (pointList.Count - 1);
 
         bool hasTitleColumn = pointList[0].ContainsKey("Title");
         bool hasNameColumn = pointList[0].ContainsKey("Name");
+
+        int xOffsetCounter = 0;
+        Dictionary<string, Color> nameColorMapping = new Dictionary<string, Color>();
+        Dictionary<string, List<Vector3>> nameLinePointsMapping = new Dictionary<string, List<Vector3>>();
 
         for (int columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
         {
             if (IsNumericColumn(selectedColumns[columnIndex]))
             {
-                Color randomColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1);
-                generatedColors.Add(randomColor);
-
                 string columnName = selectedColumns[columnIndex];
                 List<Vector3> linePoints = new List<Vector3>();
 
                 Vector3 referencePoint = lineGraphReferencePoints[columnIndex].transform.position;
 
+                string lastTitleOrName = null;
+
                 for (int i = 0; i < pointList.Count; i++)
                 {
                     try
                     {
-                        float xValue = Convert.ToSingle(pointList[i][referenceColumn]); // Fetch the day directly from the CSV
+                        float zValue = Convert.ToSingle(pointList[i][referenceColumn]); // Fetch the day directly from the CSV
                         float yValue = Convert.ToSingle(pointList[i][columnName]);
                         float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
 
-                        Vector3 plotPosition = new Vector3(
-                            referencePoint.x,
-                            referencePoint.y + (normalizedY * plotScale) + heightOffset,
-                            referencePoint.z + xValue - (floor.GetComponent<Renderer>().bounds.size.z / 2)
-                        );
-
-                        plotPosition.z = Mathf.Clamp(plotPosition.z, referencePoint.z - floor.GetComponent<Renderer>().bounds.size.z / 2, referencePoint.z + floor.GetComponent<Renderer>().bounds.size.z / 2);
-
-                        linePoints.Add(plotPosition);
-
-                        GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
-                        dataPoint.transform.parent = PointHolder.transform;
-                        dataPoint.GetComponent<Renderer>().material.color = randomColor;
-
-                        // Get the title or name value if available and remove spaces
                         string titleOrName = "";
                         if (hasTitleColumn)
                         {
@@ -451,28 +439,69 @@ public class CSVPlotter : MonoBehaviour
                             titleOrName = Convert.ToString(pointList[i]["Name"]).Replace(" ", "");
                         }
 
+                        if (!nameColorMapping.ContainsKey(titleOrName))
+                        {
+                            Color uniqueColor = GenerateUniqueColor(generatedColors);
+                            nameColorMapping[titleOrName] = uniqueColor;
+                            generatedColors.Add(uniqueColor);
+                        }
+
+                        if (lastTitleOrName == null || titleOrName != lastTitleOrName)
+                        {
+                            xOffsetCounter++;
+                            lastTitleOrName = titleOrName;
+                        }
+
+                        Vector3 plotPosition = new Vector3(
+                            referencePoint.x - (xOffsetCounter * 0.5f), // Increment X position for each different name on the opposite side
+                            referencePoint.y + (normalizedY * plotScale) + heightOffset,
+                            referencePoint.z + zValue - (floor.GetComponent<Renderer>().bounds.size.z / 2) - (1)
+                        );
+
+                        plotPosition.x = Mathf.Clamp(plotPosition.x, referencePoint.x - floor.GetComponent<Renderer>().bounds.size.x / 2, referencePoint.x + floor.GetComponent<Renderer>().bounds.size.x / 2);
+
+                        linePoints.Add(plotPosition);
+
+                        if (!nameLinePointsMapping.ContainsKey(titleOrName))
+                        {
+                            nameLinePointsMapping[titleOrName] = new List<Vector3>();
+                        }
+                        nameLinePointsMapping[titleOrName].Add(plotPosition);
+
+                        GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
+                        dataPoint.transform.parent = PointHolder.transform;
+                        dataPoint.GetComponent<Renderer>().material.color = nameColorMapping[titleOrName];
+
                         dataPoint.name = !string.IsNullOrEmpty(titleOrName)
-                            ? $"{titleOrName}: {columnName} {yValue} {xValue}"
-                            : $"{columnName} {yValue} {xValue}";
+                            ? $"{titleOrName}: {columnName} {yValue} {zValue}"
+                            : $"{columnName} {yValue} {zValue}";
                     }
                     catch (FormatException)
                     {
                         Debug.LogWarning($"Unable to parse '{pointList[i][columnName]}' as a float.");
                     }
                 }
-
-                GameObject line = DrawLine(linePoints, randomColor);
-                line.transform.parent = PointHolder.transform;
             }
         }
 
-        UpdateZAxisLabels(generatedColors);
+        // Draw lines for each unique name using the corresponding color
+        foreach (var nameLinePoints in nameLinePointsMapping)
+        {
+            GameObject line = DrawLine(nameLinePoints.Value, nameColorMapping[nameLinePoints.Key]);
+            line.transform.parent = PointHolder.transform;
+        }
+
+        UpdateZAxisLabels(nameColorMapping.Values.ToList());
     }
 
-    // Helper method to fetch X labels from xPlotTexts
-    private float[] FetchXValues()
+    private Color GenerateUniqueColor(List<Color> usedColors)
     {
-        return xPlotTexts.Select(x => float.Parse(x.text)).ToArray();
+        Color newColor;
+        do
+        {
+            newColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1);
+        } while (usedColors.Contains(newColor));
+        return newColor;
     }
 
     private GameObject DrawLine(List<Vector3> points, Color color)
