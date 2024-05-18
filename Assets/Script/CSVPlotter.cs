@@ -403,6 +403,9 @@ public class CSVPlotter : MonoBehaviour
         List<Color> generatedColors = new List<Color>();
         float xInterval = floor.GetComponent<Renderer>().bounds.size.z / (pointList.Count - 1);
 
+        bool hasTitleColumn = pointList[0].ContainsKey("Title");
+        bool hasNameColumn = pointList[0].ContainsKey("Name");
+
         for (int columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
         {
             if (IsNumericColumn(selectedColumns[columnIndex]))
@@ -419,7 +422,7 @@ public class CSVPlotter : MonoBehaviour
                 {
                     try
                     {
-                        float xValue = i * xInterval; // Spread X values evenly along the X-axis
+                        float xValue = Convert.ToSingle(pointList[i][referenceColumn]); // Fetch the day directly from the CSV
                         float yValue = Convert.ToSingle(pointList[i][columnName]);
                         float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
 
@@ -437,8 +440,20 @@ public class CSVPlotter : MonoBehaviour
                         dataPoint.transform.parent = PointHolder.transform;
                         dataPoint.GetComponent<Renderer>().material.color = randomColor;
 
-                        string dataValue = yValue.ToString("F2");
-                        dataPoint.name = $"{columnName} {dataValue} {xValue}";
+                        // Get the title or name value if available and remove spaces
+                        string titleOrName = "";
+                        if (hasTitleColumn)
+                        {
+                            titleOrName = Convert.ToString(pointList[i]["Title"]).Replace(" ", "");
+                        }
+                        else if (hasNameColumn)
+                        {
+                            titleOrName = Convert.ToString(pointList[i]["Name"]).Replace(" ", "");
+                        }
+
+                        dataPoint.name = !string.IsNullOrEmpty(titleOrName)
+                            ? $"{titleOrName}: {columnName} {yValue} {xValue}"
+                            : $"{columnName} {yValue} {xValue}";
                     }
                     catch (FormatException)
                     {
