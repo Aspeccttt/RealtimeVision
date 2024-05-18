@@ -134,12 +134,12 @@ public class CSVPlotter : MonoBehaviour
     }
 
     private void UpdateAxisLabels(float[] plotPoints, TextMeshProUGUI[] plotTexts)
+{
+    for (int i = 0; i < plotPoints.Length && i < plotTexts.Length; i++)
     {
-        for (int i = 0; i < plotPoints.Length && i < plotTexts.Length; i++)
-        {
-            plotTexts[i].text = plotPoints[i].ToString("F2");
-        }
+        plotTexts[i].text = Mathf.Round(plotPoints[i]).ToString("F0"); // "F0" format specifier for no decimal points
     }
+}
 
     public float NormalizeData(Dictionary<string, object> data, string columnName)
     {
@@ -169,6 +169,7 @@ public class CSVPlotter : MonoBehaviour
     #region Scatterplot
     public void PlotData()
     {
+        // Clear previous points
         foreach (Transform child in PointHolder.transform)
         {
             Destroy(child.gameObject);
@@ -176,7 +177,11 @@ public class CSVPlotter : MonoBehaviour
 
         db.StartPlotTimer("Scatterplot", currentCSV);
 
+        // Set tag for PointHolder
         PointHolder.transform.tag = "Scatterplot";
+
+        // Rotate PointHolder by 180 degrees around the Y-axis
+        PointHolder.transform.rotation = Quaternion.Euler(0, 180, 0);
 
         columnXName = dropdownX.options[dropdownX.value].text;
         columnYName = dropdownY.options[dropdownY.value].text;
@@ -189,6 +194,10 @@ public class CSVPlotter : MonoBehaviour
 
         Vector3 floorSize = floor.GetComponent<Renderer>().bounds.size;
         Vector3 floorPosition = floor.transform.position;
+
+        // Check if the CSV contains "Title" or "Name" columns
+        bool hasTitleColumn = pointList[0].ContainsKey("Title");
+        bool hasNameColumn = pointList[0].ContainsKey("Name");
 
         foreach (var point in pointList)
         {
@@ -204,12 +213,34 @@ public class CSVPlotter : MonoBehaviour
                 floorPosition.z + (z * floorSize.z) - (floorSize.z / 2)
             );
 
+            // Adjust the position to account for the 180-degree rotation
+            plotPosition = PointHolder.transform.TransformPoint(plotPosition);
+
             // Instantiate and position the data point
             GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
             dataPoint.transform.parent = PointHolder.transform;
 
+            // Get the title or name value if available
+            string titleOrName = "";
+            if (hasTitleColumn)
+            {
+                titleOrName = Convert.ToString(point["Title"]);
+            }
+            else if (hasNameColumn)
+            {
+                titleOrName = Convert.ToString(point["Name"]);
+            }
+
             // Naming and coloring the data point
-            dataPoint.name = $"{point[columnXName]} {point[columnYName]} {point[columnZName]}";
+            if (!string.IsNullOrEmpty(titleOrName))
+            {
+                dataPoint.name = $"{titleOrName}: {point[columnXName]} {point[columnYName]} {point[columnZName]}";
+            }
+            else
+            {
+                dataPoint.name = $"{point[columnXName]} {point[columnYName]} {point[columnZName]}";
+            }
+
             dataPoint.GetComponent<Renderer>().material.color = new Color(x, y, z, 1.0f);
         }
         Debug.Log("Data has been plotted successfully.");

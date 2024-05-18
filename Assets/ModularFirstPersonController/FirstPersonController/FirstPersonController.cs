@@ -589,11 +589,12 @@ public class FirstPersonController : MonoBehaviour
             {
                 // Assign the data to the respective TMP_Text components
                 infoTexts[1].text = CX;         // ColumnX name
-                infoTexts[2].text = parts[0];   // ColumnX Data
+                infoTexts[2].text = parts[1];   // ColumnX Data
                 infoTexts[3].text = CY;         // ColumnY name
-                infoTexts[4].text = parts[1];   // ColumnY Data
+                infoTexts[4].text = parts[2];   // ColumnY Data
                 infoTexts[5].text = CZ;         // ColumnZ name
-                infoTexts[6].text = parts[2];   // ColumnZ Data
+                infoTexts[6].text = parts[3];   // ColumnZ Data
+                infoTexts[7].text = parts[0];
             }  
 
         // Set up LineRenderer to link the panel with the data point
