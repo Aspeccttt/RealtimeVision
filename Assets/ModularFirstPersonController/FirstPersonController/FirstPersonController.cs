@@ -520,7 +520,7 @@ public class FirstPersonController : MonoBehaviour
                     if (hit.collider.transform.parent.tag == "Histogram")
                         ShowInfoPanelHistogram(hit.point, dataPointColor, dataName, "X Column", "Bin Range:", "Z Column");
                     if (hit.collider.transform.parent.tag == "LineGraph")
-                        ShowInfoPanel(hit.point, dataPointColor, dataName, "Category", "Value", "Time");
+                        ShowInfoLineGraphPanel(hit.point, dataPointColor, dataName, "Category", "Value", "Time");
 
                 }
             }
@@ -657,6 +657,55 @@ public class FirstPersonController : MonoBehaviour
 
         uiArrayCounter();
     }
+
+    private void ShowInfoLineGraphPanel(Vector3 hitPoint, Color dataPointColor, string dataName, string CX, string CY, string CZ)
+    {
+        // Position the info panel relative to the camera
+        Vector3 forwardDirection = playerCamera.transform.forward;
+        forwardDirection.y = 0; // Adjust if you want the panel to align differently
+        Vector3 panelPosition = playerCamera.transform.position + forwardDirection.normalized * infoPanelDistance;
+        panelPosition.y = Mathf.Max(hitPoint.y, panelPosition.y);
+        Quaternion panelRotation = Quaternion.LookRotation(panelPosition - playerCamera.transform.position);
+
+        // Instantiate and set up the info panel
+        GameObject infoPanel = Instantiate(infoPanelPrefab, panelPosition, panelRotation, infoPanelParent);
+        infoPanel.transform.LookAt(playerCamera.transform.position);
+        infoPanel.SetActive(true);
+
+        Image backgroundImage = infoPanel.GetComponentInChildren<Image>();
+        backgroundImage.color = dataPointColor;
+
+        string[] parts = dataName.Split(' '); // This assumes dataName format is "x y z"
+        TMP_Text[] infoTexts = infoPanel.GetComponentsInChildren<TMP_Text>();
+
+        Debug.Log($"Data Name Parts: {string.Join(", ", parts)}");
+
+        if (parts.Length >= 3)
+        {
+            // Assign the data to the respective TMP_Text components for Histogram
+            infoTexts[1].text = CX;         // ColumnX name
+            infoTexts[2].text = parts[0];   // ColumnX Data
+            infoTexts[3].text = CY;         // ColumnY name
+            infoTexts[4].text = parts[1];   // ColumnY Data
+            infoTexts[5].text = CZ;         // ColumnZ name
+            infoTexts[6].text = parts[2];   // ColumnZ Data
+        }
+
+        // Set up LineRenderer to link the panel with the data point
+        currentLineRenderer = infoPanel.AddComponent<LineRenderer>();
+        currentLineRenderer.startWidth = 0.02f;
+        currentLineRenderer.endWidth = 0.00002f;
+        currentLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        currentLineRenderer.material.color = dataPointColor;
+        currentLineRenderer.positionCount = 2;
+        currentLineRenderer.SetPositions(new Vector3[] { hitPoint, panelPosition });
+
+        infoPanels[infoPanel] = (currentLineRenderer, null); // Store the LineRenderer and the panel without dataPoint
+
+        uiArrayCounter();
+    }
+
+
 
 
     public void DespawnAllInfoPanels()

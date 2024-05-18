@@ -54,19 +54,60 @@ public class CSVPlotter : MonoBehaviour
         db = GameManager.Instance.GetComponent<DatabaseManager>();
     }
 
+    private bool IsNumericColumn(string columnName)
+    {
+        foreach (var point in pointList)
+        {
+            if (point.ContainsKey(columnName))
+            {
+                if (!float.TryParse(point[columnName].ToString(), out _))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private float FindMaxValue(string columnName)
     {
-        float maxValue = Convert.ToSingle(pointList[0][columnName]);
+        float maxValue = float.MinValue;
         foreach (var point in pointList)
-            maxValue = Mathf.Max(maxValue, Convert.ToSingle(point[columnName]));
+        {
+            try
+            {
+                float value = Convert.ToSingle(point[columnName]);
+                if (value > maxValue)
+                {
+                    maxValue = value;
+                }
+            }
+            catch (FormatException)
+            {
+                Debug.LogWarning($"Unable to parse '{point[columnName]}' as a float.");
+            }
+        }
         return maxValue;
     }
 
     private float FindMinValue(string columnName)
     {
-        float minValue = Convert.ToSingle(pointList[0][columnName]);
+        float minValue = float.MaxValue;
         foreach (var point in pointList)
-            minValue = Mathf.Min(minValue, Convert.ToSingle(point[columnName]));
+        {
+            try
+            {
+                float value = Convert.ToSingle(point[columnName]);
+                if (value < minValue)
+                {
+                    minValue = value;
+                }
+            }
+            catch (FormatException)
+            {
+                Debug.LogWarning($"Unable to parse '{point[columnName]}' as a float.");
+            }
+        }
         return minValue;
     }
 
@@ -110,6 +151,9 @@ public class CSVPlotter : MonoBehaviour
     {
         List<string> columnList = new List<string>(pointList[0].Keys);
 
+        // Filter only numeric columns
+        List<string> numericColumns = columnList.Where(IsNumericColumn).ToList();
+
         dropdownX.ClearOptions();
         dropdownY.ClearOptions();
         dropdownZ.ClearOptions();
@@ -117,13 +161,12 @@ public class CSVPlotter : MonoBehaviour
         histogramXDropdown.ClearOptions();
         histogramZDropdown.ClearOptions();
 
-        dropdownX.AddOptions(columnList);
-        dropdownY.AddOptions(columnList);
-        dropdownZ.AddOptions(columnList);
-        lineGraphSelectedColumn.AddOptions(columnList);
-        histogramXDropdown.AddOptions(columnList);
-        histogramZDropdown.AddOptions(columnList);
-
+        dropdownX.AddOptions(numericColumns);
+        dropdownY.AddOptions(numericColumns);
+        dropdownZ.AddOptions(numericColumns);
+        lineGraphSelectedColumn.AddOptions(numericColumns);
+        histogramXDropdown.AddOptions(numericColumns);
+        histogramZDropdown.AddOptions(numericColumns);
     }
 
     public void UpdatePlotPointTexts()
@@ -250,48 +293,64 @@ public class CSVPlotter : MonoBehaviour
     #region Linegraph
     public GameObject[] lineGraphReferencePoints;
 
+    private string GetReferenceColumn()
+    {
+        string[] possibleColumns = { "Day", "Days", "Time" };
+        foreach (var column in possibleColumns)
+        {
+            if (pointList[0].ContainsKey(column))
+            {
+                return column;
+            }
+        }
+        return null;
+    }
 
     public void CalculateLineGraphPoints()
     {
+        string referenceColumn = GetReferenceColumn();
+        if (referenceColumn == null)
+        {
+            Debug.LogError("No reference column found (Day, Days, or Time).");
+            return;
+        }
+
         float globalMax = float.MinValue;
         float globalMin = float.MaxValue;
 
+        int numberOfDays = pointList.Count;
+
         foreach (string column in selectedColumns)
         {
-            float localMax = FindMaxValue(column);
-            float localMin = FindMinValue(column);
-            if (localMax > globalMax) globalMax = localMax;
-            if (localMin < globalMin) globalMin = localMin;
+            if (IsNumericColumn(column))
+            {
+                float localMax = FindMaxValue(column);
+                float localMin = FindMinValue(column);
+                if (localMax > globalMax) globalMax = localMax;
+                if (localMin < globalMin) globalMin = localMin;
+            }
         }
 
-        // Calculate intervals for the labels based on the global min and max
-        float interval = (globalMax - globalMin) / 9; // Divide the range into 9 intervals (for 10 points)
+        float interval = (globalMax - globalMin) / (numberOfDays - 1);
 
-        // Update Y-axis labels
-        for (int i = 0; i < yPlotTexts.Length; i++)
+        for (int i = 0; i < yPlotTexts.Length && i < numberOfDays; i++)
         {
-            // Assuming yPlotTexts is an array of TextMeshProUGUI with length 10
             yPlotTexts[i].text = (globalMin + interval * i).ToString("F2");
         }
 
-        // Updating the X-axis labels
-        for (int i = 0; i < xPlotTexts.Length; i++)
+        for (int i = 0; i < xPlotTexts.Length && i < numberOfDays; i++)
         {
-            xPlotTexts[i].text = (i + 1).ToString();
+            xPlotTexts[i].text = (i + 1).ToString(); // Assuming the reference column contains sequential days
         }
 
-        // Updating the Z-axis labels
         for (int i = 0; i < zPlotTexts.Length; i++)
         {
-            // Check if there is a corresponding selected column for this index
             if (i < selectedColumns.Count)
             {
-                // If there is, set the label to the column name
                 zPlotTexts[i].text = selectedColumns[i];
             }
             else
             {
-                // If there isn't, set the label to an empty string
                 zPlotTexts[i].text = "";
             }
         }
@@ -301,7 +360,13 @@ public class CSVPlotter : MonoBehaviour
 
     public void LineGraphPlot()
     {
-        // Clear previous points and lines
+        string referenceColumn = GetReferenceColumn();
+        if (referenceColumn == null)
+        {
+            Debug.LogError("No reference column found (Day, Days, or Time).");
+            return;
+        }
+
         foreach (Transform child in PointHolder.transform)
         {
             Destroy(child.gameObject);
@@ -310,75 +375,82 @@ public class CSVPlotter : MonoBehaviour
         db.StartPlotTimer("Linegraph", currentCSV);
 
         PointHolder.transform.tag = "LineGraph";
-
-        // Rotate PointHolder by 90 degrees around the Y-axis
         PointHolder.transform.rotation = Quaternion.Euler(0, 90, 0);
 
-        // Find global min and max values for the Y axis across all selected columns
         float globalMin = float.MaxValue;
         float globalMax = float.MinValue;
 
         foreach (string columnName in selectedColumns)
         {
-            foreach (var point in pointList)
+            if (IsNumericColumn(columnName))
             {
-                float value = Convert.ToSingle(point[columnName]);
-                if (value < globalMin) globalMin = value;
-                if (value > globalMax) globalMax = value;
+                foreach (var point in pointList)
+                {
+                    try
+                    {
+                        float value = Convert.ToSingle(point[columnName]);
+                        if (value < globalMin) globalMin = value;
+                        if (value > globalMax) globalMax = value;
+                    }
+                    catch (FormatException)
+                    {
+                        Debug.LogWarning($"Unable to parse '{point[columnName]}' as a float.");
+                    }
+                }
             }
         }
 
-        // Store generated colors for reuse with text labels
         List<Color> generatedColors = new List<Color>();
-
-        // Fetch X labels
-        float[] xLabels = FetchXValues();
+        float xInterval = floor.GetComponent<Renderer>().bounds.size.z / (pointList.Count - 1);
 
         for (int columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
         {
-            Color randomColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1);
-            generatedColors.Add(randomColor);
-
-            string columnName = selectedColumns[columnIndex];
-            List<Vector3> linePoints = new List<Vector3>();
-
-            // Get the reference point for this column group
-            Vector3 referencePoint = lineGraphReferencePoints[columnIndex].transform.position;
-
-            // Generate plot points for the current column
-            for (int i = 0; i < pointList.Count && i < xLabels.Length; i++)
+            if (IsNumericColumn(selectedColumns[columnIndex]))
             {
-                float zValue = xLabels[i]; // Use X label value for Z position
-                float yValue = Convert.ToSingle(pointList[i][columnName]);
-                float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
+                Color randomColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1);
+                generatedColors.Add(randomColor);
 
-                // Calculate plot position using Z label
-                Vector3 plotPosition = new Vector3(
-                    referencePoint.x, // X position based on the reference point
-                    referencePoint.y + (normalizedY * plotScale) + heightOffset, // Y position based on value
-                    referencePoint.z + ((zValue - 1) / 9f * floor.GetComponent<Renderer>().bounds.size.z) - (floor.GetComponent<Renderer>().bounds.size.z / 2) // Z position based on xLabels
-                );
+                string columnName = selectedColumns[columnIndex];
+                List<Vector3> linePoints = new List<Vector3>();
 
-                // Ensure plotPosition stays within the bounds of the floor
-                plotPosition.z = Mathf.Clamp(plotPosition.z, referencePoint.z - floor.GetComponent<Renderer>().bounds.size.z / 2, referencePoint.z + floor.GetComponent<Renderer>().bounds.size.z / 2);
+                Vector3 referencePoint = lineGraphReferencePoints[columnIndex].transform.position;
 
-                linePoints.Add(plotPosition);
+                for (int i = 0; i < pointList.Count; i++)
+                {
+                    try
+                    {
+                        float xValue = i * xInterval; // Spread X values evenly along the X-axis
+                        float yValue = Convert.ToSingle(pointList[i][columnName]);
+                        float normalizedY = (yValue - globalMin) / (globalMax - globalMin);
 
-                // Instantiate data point at this plot position
-                GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
-                dataPoint.transform.parent = PointHolder.transform; // Set parent to keep the scene organized
-                dataPoint.GetComponent<Renderer>().material.color = randomColor; // Set the data point's color
+                        Vector3 plotPosition = new Vector3(
+                            referencePoint.x,
+                            referencePoint.y + (normalizedY * plotScale) + heightOffset,
+                            referencePoint.z + xValue - (floor.GetComponent<Renderer>().bounds.size.z / 2)
+                        );
 
-                string dataValue = yValue.ToString("F2");
-                dataPoint.name = $"{columnName} {dataValue} {zValue}";
+                        plotPosition.z = Mathf.Clamp(plotPosition.z, referencePoint.z - floor.GetComponent<Renderer>().bounds.size.z / 2, referencePoint.z + floor.GetComponent<Renderer>().bounds.size.z / 2);
+
+                        linePoints.Add(plotPosition);
+
+                        GameObject dataPoint = Instantiate(PointPrefab, plotPosition, Quaternion.identity);
+                        dataPoint.transform.parent = PointHolder.transform;
+                        dataPoint.GetComponent<Renderer>().material.color = randomColor;
+
+                        string dataValue = yValue.ToString("F2");
+                        dataPoint.name = $"{columnName} {dataValue} {xValue}";
+                    }
+                    catch (FormatException)
+                    {
+                        Debug.LogWarning($"Unable to parse '{pointList[i][columnName]}' as a float.");
+                    }
+                }
+
+                GameObject line = DrawLine(linePoints, randomColor);
+                line.transform.parent = PointHolder.transform;
             }
-
-            // Draw the line for the current column with the generated random color
-            GameObject line = DrawLine(linePoints, randomColor);
-            line.transform.parent = PointHolder.transform; // Set parent for the line as well
         }
 
-        // Update Z-axis labels with the generated colors
         UpdateZAxisLabels(generatedColors);
     }
 
