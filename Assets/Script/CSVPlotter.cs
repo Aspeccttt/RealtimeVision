@@ -338,6 +338,8 @@ public class CSVPlotter : MonoBehaviour
             yPlotTexts[i].text = (globalMin + interval * i).ToString("F2");
         }
 
+        // Reverse xPlotTexts array
+        Array.Reverse(xPlotTexts);
         for (int i = 0; i < xPlotTexts.Length && i < numberOfDays; i++)
         {
             xPlotTexts[i].text = (i + 1).ToString(); // Assuming the reference column contains sequential days
@@ -489,6 +491,8 @@ public class CSVPlotter : MonoBehaviour
         {
             GameObject line = DrawLine(nameLinePoints.Value, nameColorMapping[nameLinePoints.Key]);
             line.transform.parent = PointHolder.transform;
+
+            Debug.Log($"Drawn line for {nameLinePoints.Key} with color {nameColorMapping[nameLinePoints.Key]}");
         }
 
         UpdateZAxisLabels(nameColorMapping.Values.ToList());
@@ -508,14 +512,17 @@ public class CSVPlotter : MonoBehaviour
     {
         GameObject line = new GameObject("Line");
         LineRenderer lr = line.AddComponent<LineRenderer>();
-        lr.material = new Material(Shader.Find("Unlit/Color")); // Use a basic unlit color material
+        lr.material = new Material(Shader.Find("Sprites/Default")); // Use the Sprites/Default shader
         lr.startColor = color;
         lr.endColor = color;
-        lr.startWidth = 0.1f;
-        lr.endWidth = 0.1f;
+        lr.startWidth = 0.05f;
+        lr.endWidth = 0.05f;
         lr.positionCount = points.Count;
         lr.SetPositions(points.ToArray());
-        return line; // Return the created line object
+
+        Debug.Log($"Line drawn with color: {color}"); // Debug information
+
+        return line;
     }
 
 
@@ -523,19 +530,18 @@ public class CSVPlotter : MonoBehaviour
     {
         string selectedColumn = lineGraphSelectedColumn.options[lineGraphSelectedColumn.value].text;
 
-        Debug.Log("Current selected columns: " + String.Join(", ", selectedColumns));
+        // Clear previously selected columns and add the new one
+        selectedColumns.Clear();
+        selectedColumns.Add(selectedColumn);
 
-        if (!selectedColumns.Contains(selectedColumn))
-        {
-            selectedColumns.Add(selectedColumn);
-            feedbackText.text = $"Added:" + String.Join(", ", selectedColumns);
+        // Provide feedback
+        feedbackText.text = $"Selected column: {selectedColumn}";
 
-            Debug.Log("Updated selected columns: " + String.Join(", ", selectedColumns));
-        }
-        else
-        {
-            feedbackText.text = "Column already added: " + selectedColumn;
-        }
+        // Recalculate and update the line graph
+        CalculateLineGraphPoints();
+        LineGraphPlot();
+
+        Debug.Log("Updated selected column: " + selectedColumn);
     }
     #endregion
 
