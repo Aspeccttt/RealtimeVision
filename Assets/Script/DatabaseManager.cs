@@ -119,6 +119,13 @@ public class DatabaseManager : MonoBehaviour
         LogAppRuntime(); // Log the application runtime when quitting
     }
 
+    public void LogAnswer(string question, string answer)
+    {
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        db.Child("UserAnswers").Child(userId).Child(timestamp).Child("Question").SetValueAsync(question);
+        db.Child("UserAnswers").Child(userId).Child(timestamp).Child("Answer").SetValueAsync(answer);
+    }
+
 #if UNITY_EDITOR
     private void OnPlayModeStateChanged(PlayModeStateChange state)
     {

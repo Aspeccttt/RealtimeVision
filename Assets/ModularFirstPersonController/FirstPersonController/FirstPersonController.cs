@@ -642,6 +642,7 @@ public class FirstPersonController : MonoBehaviour
             infoTexts[4].text = parts[3];         // ColumnY Data
             infoTexts[5].text = "Bins Count:";         // ColumnZ name
             infoTexts[6].text = parts[4];   // ColumnZ Data
+            
         }
 
         // Set up LineRenderer to link the panel with the data point

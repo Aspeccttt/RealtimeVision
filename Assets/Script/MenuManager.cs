@@ -44,6 +44,28 @@ public class MenuManager : MonoBehaviour
     public GameObject YearsDropdown;
 
     public FirstPersonController firstPersonController;
+
+    public GameObject ControlsPanel;
+
+    private List<string> questions = new List<string>
+{
+    "How much does the RTX 3090 cost?",
+    "Which is the best budget Graphics card?",
+    "Which is the cheapest Graphics card?",
+    "Which game had the lowest PlayerCount?",
+    "On the first game, CSGO how much players it has?",
+    "Which game had the worst fall off in this dataset on the 10th day?"
+};
+
+    private List<string> answers = new List<string>();
+    private int currentQuestionIndex = 0;
+    #endregion
+
+    #region Question Box Variables
+    public GameObject questionBox;
+    public TextMeshProUGUI questionText;
+    public TMP_InputField answerInputField;
+    public Button sendAnswerButton;
     #endregion
 
     private void Update()
@@ -87,6 +109,11 @@ public class MenuManager : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
             menuAnimator.SetTrigger("Open");
         }
+    }
+
+    public void ToggleControlsClose()
+    {
+        ControlsPanel.SetActive(false);
     }
 
     private IEnumerator DeactivateAfterAnimation(Animator animator, string animation)
@@ -215,6 +242,49 @@ public class MenuManager : MonoBehaviour
 
     #endregion
 
+
+    private void StartQuestionLoop()
+    {
+        if (questions.Count > 0)
+        {
+            currentQuestionIndex = 0;
+            AskQuestion(questions[currentQuestionIndex]);
+        }
+        else
+        {
+            Debug.LogWarning("No questions to ask.");
+        }
+    }
+
+    private void AskNextQuestion()
+    {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.Count)
+        {
+            AskQuestion(questions[currentQuestionIndex]);
+        }
+        else
+        {
+            LogAllAnswers(); // All questions answered, log the answers
+            questionBox.SetActive(false); // Optionally, hide the question box
+        }
+    }
+
+    private void LogAllAnswers()
+    {
+        for (int i = 0; i < questions.Count; i++)
+        {
+            db.LogAnswer(questions[i], answers[i]);
+        }
+    }
+
+    private void AskQuestion(string question)
+    {
+        questionText.text = question;
+        answerInputField.text = "";
+        questionBox.SetActive(true);
+    }
+
     void TMPDropdownValueChanged()
     {
         SecondsDropdown.SetActive(false);
@@ -245,5 +315,10 @@ public class MenuManager : MonoBehaviour
                 YearsDropdown.SetActive(true);
                 break;
         }
+    }
+
+    public void startQuestions()
+    {
+        StartQuestionLoop();
     }
 }
