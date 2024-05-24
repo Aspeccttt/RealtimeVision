@@ -35,26 +35,19 @@ public class MenuManager : MonoBehaviour
     public GameObject[] MenuPanels; // Assign the corresponding GameObjects for each button.
 
     public TMP_Dropdown MainDropdown; // Reference to the main dropdown
-    // References to each of the secondary dropdowns
-    public GameObject SecondsDropdown;
-    public GameObject MinutesDropdown;
-    public GameObject HoursDropdown;
-    public GameObject DaysDropdown;
-    public GameObject MonthsDropdown;
-    public GameObject YearsDropdown;
 
     public FirstPersonController firstPersonController;
 
-    public GameObject ControlsPanel;
+    public GameObject AnswerPanel;
 
     private List<string> questions = new List<string>
 {
-    "How much does the RTX 3090 cost?",
+    "Load the GPU dataset, find out the price of the RTX 3090 cost?",
     "Which is the best budget Graphics card?",
     "Which is the cheapest Graphics card?",
-    "Which game had the lowest PlayerCount?",
-    "On the first game, CSGO how much players it has?",
-    "Which game had the worst fall off in this dataset on the 10th day?"
+    "Load the Steam dataset, Which game had the lowest PlayerCount?",
+    "On the first day, how much players were active on CSGO?",
+    "Which game had the worst fall off on the 10th day?"
 };
 
     private List<string> answers = new List<string>();
@@ -63,9 +56,17 @@ public class MenuManager : MonoBehaviour
 
     #region Question Box Variables
     public GameObject questionBox;
-    public TextMeshProUGUI questionText;
+    public TextMeshProUGUI questionText1;
+    public TextMeshProUGUI questionText2;
     public TMP_InputField answerInputField;
     public Button sendAnswerButton;
+    #endregion
+
+    #region UI Panel DB variables
+    private float answerPanelOpenTime;
+    private float answerPanelCloseTime;
+    private float mainPanelOpenTime;
+    private float mainPanelCloseTime;
     #endregion
 
     private void Update()
@@ -78,14 +79,12 @@ public class MenuManager : MonoBehaviour
 
     void Start()
     {
+
         db = GameManager.Instance.GetComponent<DatabaseManager>();
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         firstPersonController = player.GetComponentInChildren<FirstPersonController>();
 
-        // Add listener for when the main dropdown value changes
-        MainDropdown.onValueChanged.AddListener(delegate {
-            TMPDropdownValueChanged();
-        });
+        sendAnswerButton.onClick.AddListener(OnSendAnswerButtonClicked);
     }
 
     #region Main Menu Controller
@@ -102,18 +101,32 @@ public class MenuManager : MonoBehaviour
             menuAnimator.SetTrigger("Close");
             Cursor.lockState = CursorLockMode.Locked;
             StartCoroutine(DeactivateAfterAnimation(menuAnimator, "Close"));
+            LogAnswerPanelDuration();
+
         }
         else
         {
+            answerPanelOpenTime = Time.time;
             menuPanel.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             menuAnimator.SetTrigger("Open");
         }
     }
 
-    public void ToggleControlsClose()
+    public void ToggleAnswerBox()
     {
-        ControlsPanel.SetActive(false);
+        if (!menuPanel.activeSelf)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            AnswerPanel.SetActive(false);
+        }
+        else
+        {
+            menuPanel.SetActive(false);
+            Cursor.lockState = CursorLockMode.None;
+            AnswerPanel.SetActive(true);
+            
+        }
     }
 
     private IEnumerator DeactivateAfterAnimation(Animator animator, string animation)
@@ -243,7 +256,7 @@ public class MenuManager : MonoBehaviour
     #endregion
 
 
-    private void StartQuestionLoop()
+    public void StartQuestionLoop()
     {
         if (questions.Count > 0)
         {
@@ -256,69 +269,51 @@ public class MenuManager : MonoBehaviour
         }
     }
 
-    private void AskNextQuestion()
+    private void AskQuestion(string question)
     {
+        questionText1.text = question;
+        questionText2.text = question;
+        answerInputField.text = "";
+        questionBox.SetActive(true);
+    }
+
+    public void startQuestions()
+    {
+        StartQuestionLoop();
+    }
+
+    private void OnSendAnswerButtonClicked()
+    {
+        string currentQuestion = questions[currentQuestionIndex];
+        string userAnswer = answerInputField.text;
+        string currentPlotType = GetCurrentPlotType(); // Get the current plot type
+
+        answers.Add(userAnswer);
+        db.LogAnswer(currentPlotType, currentQuestion, userAnswer); // Pass the plot type to LogAnswer
+
         currentQuestionIndex++;
+
         if (currentQuestionIndex < questions.Count)
         {
             AskQuestion(questions[currentQuestionIndex]);
         }
         else
         {
-            LogAllAnswers(); // All questions answered, log the answers
-            questionBox.SetActive(false); // Optionally, hide the question box
+            ToggleAnswerBox(); // Close the answer panel and log the duration
+            questionBox.SetActive(false);
+            Debug.Log("All questions have been answered.");
         }
     }
 
-    private void LogAllAnswers()
+    private string GetCurrentPlotType()
     {
-        for (int i = 0; i < questions.Count; i++)
-        {
-            db.LogAnswer(questions[i], answers[i]);
-        }
+        return GetSelectedButtonName(); // Assuming this returns the current plot type
     }
 
-    private void AskQuestion(string question)
+    private void LogAnswerPanelDuration()
     {
-        questionText.text = question;
-        answerInputField.text = "";
-        questionBox.SetActive(true);
-    }
-
-    void TMPDropdownValueChanged()
-    {
-        SecondsDropdown.SetActive(false);
-        MinutesDropdown.SetActive(false);
-        HoursDropdown.SetActive(false);
-        DaysDropdown.SetActive(false);
-        MonthsDropdown.SetActive(false);
-        YearsDropdown.SetActive(false);
-
-        switch (MainDropdown.options[MainDropdown.value].text)
-        {
-            case "Seconds":
-                SecondsDropdown.SetActive(true);
-                break;
-            case "Minutes":
-                MinutesDropdown.SetActive(true);
-                break;
-            case "Hours":
-                HoursDropdown.SetActive(true);
-                break;
-            case "Days":
-                DaysDropdown.SetActive(true);
-                break;
-            case "Months":
-                MonthsDropdown.SetActive(true);
-                break;
-            case "Years":
-                YearsDropdown.SetActive(true);
-                break;
-        }
-    }
-
-    public void startQuestions()
-    {
-        StartQuestionLoop();
+        float duration = answerPanelCloseTime - answerPanelOpenTime;
+        string currentPlotType = GetCurrentPlotType();
+        db.LogAnswerPanelDuration(currentPlotType, duration);
     }
 }

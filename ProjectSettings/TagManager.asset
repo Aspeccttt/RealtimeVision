@@ -12,6 +12,7 @@ TagManager:
   - LineGraph
   - Scatterplot
   - Histogram
+  - Desk
   layers:
   - Default
   - TransparentFX

@@ -119,12 +119,29 @@ public class DatabaseManager : MonoBehaviour
         LogAppRuntime(); // Log the application runtime when quitting
     }
 
-    public void LogAnswer(string question, string answer)
+    public void LogAnswer(string plotType, string question, string answer)
     {
-        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        db.Child("UserAnswers").Child(userId).Child(timestamp).Child("Question").SetValueAsync(question);
-        db.Child("UserAnswers").Child(userId).Child(timestamp).Child("Answer").SetValueAsync(answer);
+        string userId = SystemInfo.deviceUniqueIdentifier;
+
+        db.Child("UserInfo").Child(userId).Child(plotType).Child("Questions").Child(question).Child("Answer").SetValueAsync(answer);
     }
+
+    public void LogAnswerPanelDuration(string plotType, float duration)
+    {
+        string userId = SystemInfo.deviceUniqueIdentifier; // Get the user ID
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        db.Child("UserInfo").Child(userId).Child(plotType).Child("AnswerPanelDurations").Child(timestamp).SetValueAsync(duration);
+    }
+
+    public void LogUIDuration(float duration)
+    {
+        string userId = SystemInfo.deviceUniqueIdentifier;
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        db.Child("UserInfo").Child(userId).Child("Time Spent Main Menu").Child(timestamp).SetValueAsync(duration);
+    }
+
 
 #if UNITY_EDITOR
     private void OnPlayModeStateChanged(PlayModeStateChange state)

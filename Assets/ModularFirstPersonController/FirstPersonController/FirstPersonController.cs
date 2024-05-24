@@ -448,6 +448,8 @@ public class FirstPersonController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
+
+
             PointerEventData pointerData = new PointerEventData(EventSystem.current)
             {
                 position = Input.mousePosition // Use the current mouse position
@@ -460,8 +462,15 @@ public class FirstPersonController : MonoBehaviour
 
             foreach (RaycastResult result in uiHits)
             {
+                
+
                 if (LayerMask.LayerToName(result.gameObject.layer) == "UI")
                 {
+                    if (result.gameObject.CompareTag("Desk"))
+                    {
+                        GameManager.Instance.GetComponent<MenuManager>().ToggleAnswerBox();
+                    }
+
                     if (result.gameObject.CompareTag("CloseButton"))
                     {
                         Debug.Log("Close button was clicked.");
@@ -502,6 +511,8 @@ public class FirstPersonController : MonoBehaviour
                         }
                         return;
                     }
+
+                    
                 }
             }
 
