@@ -52,6 +52,10 @@ public class CSVPlotter : MonoBehaviour
     public TMP_Dropdown lineGraphSelectedColumn;
     public TextMeshProUGUI feedbackText;
     public List<string> selectedColumns = new List<string>(); // This now becomes global
+
+    //Colour Picker
+    public Color pointColor = Color.white;
+
     #endregion
 
     #region Global Methods
@@ -281,7 +285,7 @@ public class CSVPlotter : MonoBehaviour
                 titleOrName = Convert.ToString(point["Name"]);
             }
 
-            // Naming and coloring the data point
+            // Naming the data point
             if (!string.IsNullOrEmpty(titleOrName))
             {
                 dataPoint.name = $"{titleOrName}: {point[columnXName]} {point[columnYName]} {point[columnZName]}";
@@ -291,8 +295,17 @@ public class CSVPlotter : MonoBehaviour
                 dataPoint.name = $"{point[columnXName]} {point[columnYName]} {point[columnZName]}";
             }
 
-            dataPoint.GetComponent<Renderer>().material.color = new Color(x, y, z, 1.0f);
+            // Generate the gradient color
+            Color gradientColor = new Color(
+                pointColor.r * y,
+                pointColor.g * y,
+                pointColor.b * y,
+                1.0f
+            );
+
+            dataPoint.GetComponent<Renderer>().material.color = gradientColor;
         }
+
         Debug.Log("Data has been plotted successfully.");
     }
     #endregion

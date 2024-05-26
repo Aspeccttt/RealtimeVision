@@ -5,7 +5,6 @@ using Firebase.Database;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEditor.MaterialProperty;
 using Firebase.Extensions;
 
 public class DatabaseManager : MonoBehaviour

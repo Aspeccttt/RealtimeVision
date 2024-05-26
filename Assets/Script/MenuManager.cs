@@ -4,7 +4,6 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.GraphicsBuffer;
 
 public class MenuManager : MonoBehaviour
 {
@@ -43,14 +42,17 @@ public class MenuManager : MonoBehaviour
     public GameObject AnswerPanel;
 
     private List<string> questions = new List<string>
-{
+    {
     "Load the GPU dataset, find out the price of the RTX 3090 cost?",
     "Which is the best budget Graphics card?, Explain the relationship with 3D mark and the price",
-    "Which is the cheapest Graphics card?",
-    "Load the Steam dataset, Which game had the lowest PlayerCount?",
-    "On the first day, how much players were active on CSGO?",
-    "Which game had the worst fall off on the 10th day?"
-};
+    "Which is the cheapest Graphics card available in the dataset?",
+    "Load the Steam dataset, Which game had the lowest Player Count in all of the data?",
+    "On the first day, how much players were active on CSGO altogether?",
+    "Which game had the worst fall off of average players on the 10th day?",
+    "Load the CPU Dataset, What is the distribution of clock speed (GHz) for different CPU Cores?",
+    "How is the Thermal Design Power (TDP) distributed amoung different CPUs",
+    "What is the distribution of CPU cores across different CPUs Threads?"
+    };
 
     private List<string> answers = new List<string>();
     private int currentQuestionIndex = 0;
@@ -65,8 +67,6 @@ public class MenuManager : MonoBehaviour
     #endregion
 
     #region UI Panel DB variables
-    private float answerPanelOpenTime;
-    private float answerPanelCloseTime;
     private float mainPanelOpenTime;
     private float mainPanelCloseTime;
     private Dictionary<string, float> plotStartTimes = new Dictionary<string, float>();

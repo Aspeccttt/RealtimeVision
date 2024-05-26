@@ -477,7 +477,7 @@ public class FirstPersonController : MonoBehaviour
 
             foreach (RaycastResult result in uiHits)
             {
-                
+
 
                 if (LayerMask.LayerToName(result.gameObject.layer) == "UI")
                 {
@@ -528,7 +528,7 @@ public class FirstPersonController : MonoBehaviour
                         return;
                     }
 
-                    
+
                 }
             }
 
@@ -676,7 +676,7 @@ public class FirstPersonController : MonoBehaviour
             infoTexts[4].text = parts[3];         // ColumnY Data
             infoTexts[5].text = "Bins Count:";         // ColumnZ name
             infoTexts[6].text = parts[4];   // ColumnZ Data
-            
+
         }
 
         // Set up LineRenderer to link the panel with the data point
@@ -915,6 +915,7 @@ public class FirstPersonController : MonoBehaviour
             joint.localPosition = new Vector3(Mathf.Lerp(joint.localPosition.x, jointOriginalPos.x, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.y, jointOriginalPos.y, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.z, jointOriginalPos.z, Time.deltaTime * bobSpeed));
         }
     }
+}
 
     // Custom Editor
 #if UNITY_EDITOR
@@ -1140,5 +1141,4 @@ public class FirstPersonController : MonoBehaviour
         }
 
     }
-}
 #endif
