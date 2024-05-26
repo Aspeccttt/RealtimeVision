@@ -53,8 +53,11 @@ public class CSVPlotter : MonoBehaviour
     public TextMeshProUGUI feedbackText;
     public List<string> selectedColumns = new List<string>(); // This now becomes global
 
-    //Colour Picker
+    //Colour Picker Scatterplot
     public Color pointColor = Color.white;
+
+    //Self explained
+    public Color histogramColor = Color.white;
 
     #endregion
 
@@ -504,6 +507,7 @@ public class CSVPlotter : MonoBehaviour
                     {
                         Debug.LogWarning($"Unable to parse '{pointList[i][columnName]}' as a float.");
                     }
+                    GameManager.Instance.ShowNotification("Linegraph plotted!");
                 }
             }
         }
@@ -619,7 +623,6 @@ public class CSVPlotter : MonoBehaviour
         }
 
         Vector3 plotDimensions = new Vector3(9f, plotParent.transform.localScale.y - 1, 9f);
-        //plotParent.transform.position = new Vector3(2, -2, -1);
 
         // Create new histogram bars
         for (int i = 0; i < numberOfBins; i++)
@@ -635,9 +638,15 @@ public class CSVPlotter : MonoBehaviour
                 bar.transform.localScale = new Vector3(plotDimensions.x / numberOfBins * 0.9f, bins[i, j], plotDimensions.z / numberOfBins * 0.9f);
                 bar.transform.parent = PointHolder.transform;
 
-                // Color interpolation based on count
-                float intensity = (float)bins[i, j] / maxCount;
-                bar.GetComponent<Renderer>().material.color = new Color(0f, intensity, 0f, 1f);  // Green intensity scales with count
+                // Generate the gradient color for the histogram bars
+                Color gradientColor = new Color(
+                    histogramColor.r * bins[i, j] / (float)maxCount,
+                    histogramColor.g * bins[i, j] / (float)maxCount,
+                    histogramColor.b * bins[i, j] / (float)maxCount,
+                    1.0f
+                );
+
+                bar.GetComponent<Renderer>().material.color = gradientColor;
 
                 float xRangeStart = xMin + i * xRange;
                 float xRangeEnd = xRangeStart + xRange;

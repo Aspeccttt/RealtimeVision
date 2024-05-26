@@ -33,6 +33,7 @@ public class ColorPickerUI : MonoBehaviour
     {
         Color newColor = new Color(redSlider.value, greenSlider.value, blueSlider.value);
         csvPlotter.pointColor = newColor;
+        csvPlotter.histogramColor = newColor;
         UpdateColorDisplay(newColor);
     }
 

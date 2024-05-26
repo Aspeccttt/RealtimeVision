@@ -80,6 +80,8 @@ public class MenuManager : MonoBehaviour
     [SerializeField]
     private Button nextButton;
 
+    private float originalWalkSpeed;
+
     private IEnumerator EnableNextButtonAfterDelay(Button button, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -101,6 +103,8 @@ public class MenuManager : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         firstPersonController = player.GetComponentInChildren<FirstPersonController>();
 
+        originalWalkSpeed = firstPersonController.walkSpeed; // Store the original walk speed
+
         sendAnswerButton.onClick.AddListener(OnSendAnswerButtonClicked);
         StartCoroutine(EnableNextButtonAfterDelay(nextButton, 5f));
     }
@@ -111,41 +115,55 @@ public class MenuManager : MonoBehaviour
     /// Toggle the menu's visibility.
     /// </summary>
     public void ToggleMenu()
-{
-    Animator menuAnimator = menuPanel.GetComponent<Animator>();
+    {
+        if (AnswerPanel.activeSelf)
+        {
+            Debug.Log("Close the AnswerBox before opening the menu.");
+            return;
+        }
+
+        Animator menuAnimator = menuPanel.GetComponent<Animator>();
         GameManager.Instance.PlaySound("Menu");
 
-    if (menuPanel.activeSelf)
-    {
-        menuAnimator.SetTrigger("Close");
-        Cursor.lockState = CursorLockMode.Locked;
-        StartCoroutine(DeactivateAfterAnimation(menuAnimator, "Close"));
-        mainPanelCloseTime = Time.time; // Set close time
-        LogMainPanelDuration(); // Log the duration
-    }
-    else
-    {
-        mainPanelOpenTime = Time.time; // Set open time
-        menuPanel.SetActive(true);
-        Cursor.lockState = CursorLockMode.None;
-        menuAnimator.SetTrigger("Open");
-    }
-}
-
-    public void ToggleAnswerBox()
-    {
-        
-        if (!menuPanel.activeSelf)
+        if (menuPanel.activeSelf)
         {
+            menuAnimator.SetTrigger("Close");
             Cursor.lockState = CursorLockMode.Locked;
-            AnswerPanel.SetActive(false);
+            StartCoroutine(DeactivateAfterAnimation(menuAnimator, "Close"));
+            mainPanelCloseTime = Time.time; // Set close time
+            LogMainPanelDuration(); // Log the duration
+            SetPlayerMovementSpeed(originalWalkSpeed); // Restore original speed
         }
         else
         {
-            menuPanel.SetActive(false);
+            mainPanelOpenTime = Time.time; // Set open time
+            menuPanel.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
+            menuAnimator.SetTrigger("Open");
+            SetPlayerMovementSpeed(0f); // Set speed to 0
+        }
+    }
+
+    public void ToggleAnswerBox()
+    {
+        if (menuPanel.activeSelf)
+        {
+            Debug.Log("Close the menu before opening the AnswerBox.");
+            return;
+        }
+
+        // Check the state of the AnswerPanel and toggle its visibility
+        if (AnswerPanel.activeSelf)
+        {
+            AnswerPanel.SetActive(false);
+            Cursor.lockState = CursorLockMode.Locked;
+            SetPlayerMovementSpeed(originalWalkSpeed); // Restore original speed
+        }
+        else
+        {
             AnswerPanel.SetActive(true);
-            
+            Cursor.lockState = CursorLockMode.None;
+            SetPlayerMovementSpeed(0f); // Set speed to 0
         }
     }
 
@@ -199,9 +217,6 @@ public class MenuManager : MonoBehaviour
 
             GameManager.Instance.GetComponent<CSVPlotter>().CalculateLineGraphPoints();
             GameManager.Instance.GetComponent<CSVPlotter>().LineGraphPlot();
-
-            GameManager.Instance.ShowNotification("Linegraph plotted!");
-
         }
         else if (plotType == "Scatterplot")
         {
@@ -263,6 +278,12 @@ public class MenuManager : MonoBehaviour
         {
             MenuPanels[index].SetActive(true); // Activate the corresponding panel
         }
+
+        // Ensure the AnswerPanel is hidden when a button is clicked in the menu
+        if (AnswerPanel.activeSelf)
+        {
+            AnswerPanel.SetActive(false);
+        }
     }
 
     public string GetSelectedButtonName()
@@ -307,6 +328,12 @@ public class MenuManager : MonoBehaviour
     public void startQuestions()
     {
         StartQuestionLoop();
+    }
+
+    public void SetPlayerMovementSpeed(float speed)
+    {
+        firstPersonController.walkSpeed = speed;
+        firstPersonController.sprintSpeed = speed; // Also set sprint speed to 0 if needed
     }
 
     private void OnSendAnswerButtonClicked()
