@@ -10,6 +10,11 @@ public class CSVReader
     static string LINE_SPLIT_RE = @"\r\n|\n\r|\n|\r"; // Define line delimiters, regular experession craziness
     static char[] TRIM_CHARS = { '\"' };
 
+    /// <summary>
+    /// This methods will read from the string uploaded, handles a minimal amount of exception handling. 
+    /// </summary>
+    /// <param name="csvContent"></param>
+    /// <returns></returns>
     public static List<Dictionary<string, object>> ReadFromString(string csvContent)
     {
         var list = new List<Dictionary<string, object>>();
@@ -27,9 +32,9 @@ public class CSVReader
             var entry = new Dictionary<string, object>();
             for (var j = 0; j < header.Length && j < values.Length; j++)
             {
-                string value = values[j]; // Set local variable value
+                string value = values[j];
                 value = value.TrimStart(TRIM_CHARS).TrimEnd(TRIM_CHARS).Replace("\\", ""); // Trim characters
-                object finalvalue = value; //set final value
+                object finalvalue = value;
 
                 int n; // Create int, to hold value if int
 

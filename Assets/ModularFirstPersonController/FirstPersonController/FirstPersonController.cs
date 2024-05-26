@@ -88,6 +88,21 @@ public class FirstPersonController : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// Method that fetches all the currentdatapanels in a list to be used for the DB.
+    /// </summary>
+    /// <returns></returns>
+    public List<string> GetCurrentDataPanels()
+    {
+        List<string> dataPanelInfos = new List<string>();
+        foreach (var kvp in infoPanels)
+        {
+            string panelInfo = kvp.Key.name; // You can customize this to include more detailed information
+            dataPanelInfos.Add(panelInfo);
+        }
+        return dataPanelInfos;
+    }
     #endregion
 
     private Rigidbody rb;
@@ -474,6 +489,7 @@ public class FirstPersonController : MonoBehaviour
                     if (result.gameObject.CompareTag("CloseButton"))
                     {
                         Debug.Log("Close button was clicked.");
+                        GameManager.Instance.PlaySound("Pop");
                         Transform panel = result.gameObject.transform.parent;
                         while (panel != null && !panel.CompareTag("OrientableUI"))
                         {
@@ -518,6 +534,12 @@ public class FirstPersonController : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity))
             {
+                if (hit.collider.CompareTag("Desk"))
+                {
+                    Debug.Log("CLICK DESK!");
+                    GameManager.Instance.GetComponent<MenuManager>().ToggleAnswerBox();
+                }
+
                 hasHit = true;
                 if (hit.collider.CompareTag("DataPoint"))
                 {
@@ -585,6 +607,7 @@ public class FirstPersonController : MonoBehaviour
 
         // Instantiate and set up the info panel
         GameObject infoPanel = Instantiate(infoPanelPrefab, panelPosition, panelRotation, infoPanelParent);
+        infoPanel.name = dataName; // Set the name of the info panel to the exact data point name
         infoPanel.transform.LookAt(playerCamera.transform.position);
         infoPanel.SetActive(true);
 
@@ -596,17 +619,17 @@ public class FirstPersonController : MonoBehaviour
 
         Debug.Log($"Data Name Parts: {string.Join(", ", parts)}");
 
-            if (parts.Length >= 3)
-            {
-                // Assign the data to the respective TMP_Text components
-                infoTexts[1].text = CX;         // ColumnX name
-                infoTexts[2].text = parts[1];   // ColumnX Data
-                infoTexts[3].text = CY;         // ColumnY name
-                infoTexts[4].text = parts[2];   // ColumnY Data
-                infoTexts[5].text = CZ;         // ColumnZ name
-                infoTexts[6].text = parts[3];   // ColumnZ Data
-                infoTexts[7].text = parts[0];
-            }  
+        if (parts.Length >= 3)
+        {
+            // Assign the data to the respective TMP_Text components
+            infoTexts[1].text = CX;         // ColumnX name
+            infoTexts[2].text = parts[1];   // ColumnX Data
+            infoTexts[3].text = CY;         // ColumnY name
+            infoTexts[4].text = parts[2];   // ColumnY Data
+            infoTexts[5].text = CZ;         // ColumnZ name
+            infoTexts[6].text = parts[3];   // ColumnZ Data
+            infoTexts[7].text = parts[0];
+        }
 
         // Set up LineRenderer to link the panel with the data point
         currentLineRenderer = infoPanel.AddComponent<LineRenderer>();

@@ -25,6 +25,7 @@ public class CSVUploader : MonoBehaviour
         else
         {
             Debug.Log("CSV loading cancelled or failed.");
+            GameManager.Instance.ShowNotification("Cancelled Upload...");
         }
     }
 
@@ -53,12 +54,14 @@ public class CSVUploader : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogError("CSVPlotter reference not set in CSVUploader.");
+                        Debug.Log("CSVPlotter reference not set in CSVUploader.");
+                        GameManager.Instance.ShowNotification("Error 303");
                     }
                 }
                 else
                 {
                     Debug.LogError("No data parsed from CSV.");
+                    GameManager.Instance.ShowNotification("No data parsed from CSV.");
                 }
             }
         }

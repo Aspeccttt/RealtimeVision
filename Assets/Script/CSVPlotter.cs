@@ -4,13 +4,20 @@ using System;
 using UnityEngine.UI;
 using TMPro;
 using System.Linq;
+using static UnityEngine.GraphicsBuffer;
+using UnityEditor;
+
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class CSVPlotter : MonoBehaviour
 {
     #region db Variables
 
     private DatabaseManager db;
-    private string currentCSV;
+    public string currentCSV;
 
     #endregion
 
@@ -311,7 +318,8 @@ public class CSVPlotter : MonoBehaviour
         string referenceColumn = GetReferenceColumn();
         if (referenceColumn == null)
         {
-            Debug.LogError("No reference column found (Day, Days, or Time).");
+            Debug.Log("No reference column found (Day, Days, or Time).");
+            GameManager.Instance.ShowNotification("Invalid Plot Type for CSV Dataset!");
             return;
         }
 
@@ -365,7 +373,8 @@ public class CSVPlotter : MonoBehaviour
         string referenceColumn = GetReferenceColumn();
         if (referenceColumn == null)
         {
-            Debug.LogError("No reference column found (Day, Days, or Time).");
+            Debug.Log("No reference column found (Day, Days, or Time).");
+            GameManager.Instance.ShowNotification("Invalid Plot Type for CSV Dataset!");
             return;
         }
 
@@ -683,8 +692,119 @@ public class CSVPlotter : MonoBehaviour
         }
     }
 }
-    #endregion
+#endregion
 
+#if UNITY_EDITOR
+
+[CustomEditor(typeof(CSVPlotter)), InitializeOnLoadAttribute]
+public class CSVPlotterEditor : Editor
+{
+    CSVPlotter csvPlotter;
+    SerializedObject serializedCSVPlotter;
+
+    private void OnEnable()
+    {
+        csvPlotter = (CSVPlotter)target;
+        serializedCSVPlotter = new SerializedObject(csvPlotter);
+    }
+
+    public override void OnInspectorGUI()
+    {
+        serializedCSVPlotter.Update();
+
+        EditorGUILayout.Space();
+        GUILayout.Label("CSV Plotter", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 16 });
+        GUILayout.Label("Custom Script by: Ilario Cutajar", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
+        EditorGUILayout.Space();
+
+        #region CSV Setup
+
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("CSV Setup", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        EditorGUILayout.Space();
+
+        csvPlotter.currentCSV = EditorGUILayout.TextField(new GUIContent("Current CSV", "Name of the currently loaded CSV file."), csvPlotter.currentCSV);
+
+        EditorGUILayout.Space();
+
+        #endregion
+
+        #region Global Settings
+
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("Global Settings", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        EditorGUILayout.Space();
+
+        csvPlotter.plotScale = EditorGUILayout.FloatField(new GUIContent("Plot Scale", "Scale of the plot."), csvPlotter.plotScale);
+        csvPlotter.heightOffset = EditorGUILayout.FloatField(new GUIContent("Height Offset", "Height offset for the points."), csvPlotter.heightOffset);
+
+        csvPlotter.PointPrefab = (GameObject)EditorGUILayout.ObjectField(new GUIContent("Point Prefab", "Prefab for the points."), csvPlotter.PointPrefab, typeof(GameObject), false);
+        csvPlotter.PointHolder = (GameObject)EditorGUILayout.ObjectField(new GUIContent("Point Holder", "Holder for the points."), csvPlotter.PointHolder, typeof(GameObject), true);
+
+        EditorGUILayout.Space();
+
+        #endregion
+
+        #region Dropdowns Setup
+
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("Dropdowns Setup", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        EditorGUILayout.Space();
+
+        csvPlotter.dropdownX = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Dropdown X", "Dropdown for X-axis."), csvPlotter.dropdownX, typeof(TMP_Dropdown), true);
+        csvPlotter.dropdownY = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Dropdown Y", "Dropdown for Y-axis."), csvPlotter.dropdownY, typeof(TMP_Dropdown), true);
+        csvPlotter.dropdownZ = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Dropdown Z", "Dropdown for Z-axis."), csvPlotter.dropdownZ, typeof(TMP_Dropdown), true);
+        csvPlotter.lineGraphSelectedColumn = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Line Graph Selected Column", "Dropdown for selecting columns for line graph."), csvPlotter.lineGraphSelectedColumn, typeof(TMP_Dropdown), true);
+        csvPlotter.histogramXDropdown = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Histogram X Dropdown", "Dropdown for X-axis in histogram."), csvPlotter.histogramXDropdown, typeof(TMP_Dropdown), true);
+        csvPlotter.histogramZDropdown = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Histogram Z Dropdown", "Dropdown for Z-axis in histogram."), csvPlotter.histogramZDropdown, typeof(TMP_Dropdown), true);
+
+        EditorGUILayout.Space();
+
+        #endregion
+
+        #region Plot Texts
+
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("Plot Texts", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        EditorGUILayout.Space();
+
+        SerializedProperty xPlotTexts = serializedCSVPlotter.FindProperty("xPlotTexts");
+        EditorGUILayout.PropertyField(xPlotTexts, new GUIContent("X Plot Texts", "Text labels for X-axis."), true);
+        SerializedProperty yPlotTexts = serializedCSVPlotter.FindProperty("yPlotTexts");
+        EditorGUILayout.PropertyField(yPlotTexts, new GUIContent("Y Plot Texts", "Text labels for Y-axis."), true);
+        SerializedProperty zPlotTexts = serializedCSVPlotter.FindProperty("zPlotTexts");
+        EditorGUILayout.PropertyField(zPlotTexts, new GUIContent("Z Plot Texts", "Text labels for Z-axis."), true);
+
+        EditorGUILayout.Space();
+
+        #endregion
+
+        #region Line Graph Settings
+
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("Line Graph Settings", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        EditorGUILayout.Space();
+
+        csvPlotter.feedbackText = (TextMeshProUGUI)EditorGUILayout.ObjectField(new GUIContent("Feedback Text", "Text to provide feedback on selected columns."), csvPlotter.feedbackText, typeof(TextMeshProUGUI), true);
+
+        SerializedProperty selectedColumns = serializedCSVPlotter.FindProperty("selectedColumns");
+        EditorGUILayout.PropertyField(selectedColumns, new GUIContent("Selected Columns", "List of selected columns for the line graph."), true);
+
+        EditorGUILayout.Space();
+
+        #endregion
+
+        // Additional sections (Histogram, etc.) can be added similarly
+
+        if (GUI.changed)
+        {
+            EditorUtility.SetDirty(csvPlotter);
+            Undo.RecordObject(csvPlotter, "CSV Plotter Change");
+            serializedCSVPlotter.ApplyModifiedProperties();
+        }
+    }
+}
+#endif
 
 
 
