@@ -93,10 +93,12 @@ public class DatabaseManager : MonoBehaviour
 
         if (!plotCounts.ContainsKey(plotType))
         {
-            plotCounts[plotType] = 0;
+            plotCounts[plotType] = 1; // Initialize plot count to 1
         }
-
-        plotCounts[plotType]++; // Increment plot count by 1
+        else
+        {
+            plotCounts[plotType]++; // Increment plot count by 1
+        }
 
         activePlotType = plotType;
 
