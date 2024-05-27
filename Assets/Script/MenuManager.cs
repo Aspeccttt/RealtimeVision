@@ -1,9 +1,11 @@
+#region Unity Imports
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+#endregion
 
 public class MenuManager : MonoBehaviour
 {
@@ -43,15 +45,15 @@ public class MenuManager : MonoBehaviour
 
     private List<string> questions = new List<string>
     {
-    "Load the GPU dataset, find out the price of the RTX 3090 cost?",
-    "Which is the best budget Graphics card?, Explain the relationship with 3D mark and the price",
-    "Which is the cheapest Graphics card available in the dataset?",
-    "Load the Steam dataset, Which game had the lowest Player Count in all of the data?",
-    "On the first day, how much players were active on CSGO altogether?",
-    "Which game had the worst fall off of average players on the 10th day?",
-    "Load the CPU Dataset, What is the distribution of clock speed (GHz) for different CPU Cores?",
-    "How is the Thermal Design Power (TDP) distributed amoung different CPUs",
-    "What is the distribution of CPU cores across different CPUs Threads?"
+        "Load the GPU dataset, find out the price of the RTX 3090 cost?",
+        "Which is the best budget Graphics card?, Explain the relationship with 3D mark and the price",
+        "Which is the cheapest Graphics card available in the dataset?",
+        "Load the Steam dataset, Which game had the lowest Player Count in all of the data?",
+        "On the first day, how much players were active on CSGO altogether?",
+        "Which game had the worst fall off of average players on the 10th day?",
+        "Load the CPU Dataset, What is the distribution of clock speed (GHz) for different CPU Cores?",
+        "How is the Thermal Design Power (TDP) distributed among different CPUs",
+        "What is the distribution of CPU cores across different CPUs Threads?"
     };
 
     private List<string> answers = new List<string>();
@@ -73,15 +75,15 @@ public class MenuManager : MonoBehaviour
     private float questionStartTime;
     #endregion
 
-    /// <summary>
-    /// Interactions whereby happens once or in a rare occurances.
-    /// </summary>
     #region Special Interactions
     [SerializeField]
     private Button nextButton;
 
     private float originalWalkSpeed;
 
+    /// <summary>
+    /// Coroutine to enable a button after a delay.
+    /// </summary>
     private IEnumerator EnableNextButtonAfterDelay(Button button, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -89,6 +91,7 @@ public class MenuManager : MonoBehaviour
     }
     #endregion
 
+    #region Unity Methods
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -97,7 +100,7 @@ public class MenuManager : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
         db = GameManager.Instance.GetComponent<DatabaseManager>();
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -108,6 +111,7 @@ public class MenuManager : MonoBehaviour
         sendAnswerButton.onClick.AddListener(OnSendAnswerButtonClicked);
         StartCoroutine(EnableNextButtonAfterDelay(nextButton, 5f));
     }
+    #endregion
 
     #region Main Menu Controller
 
@@ -144,6 +148,9 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Toggle the answer box's visibility.
+    /// </summary>
     public void ToggleAnswerBox()
     {
         if (menuPanel.activeSelf)
@@ -167,6 +174,9 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Coroutine to deactivate a GameObject after an animation.
+    /// </summary>
     private IEnumerator DeactivateAfterAnimation(Animator animator, string animation)
     {
         float animationDuration = animator.GetCurrentAnimatorStateInfo(0).length;
@@ -178,13 +188,18 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handle actions after CSV is loaded.
+    /// </summary>
     public void CSVLoaded()
     {
-
         waitingUIPanel.SetActive(false);
         uploadedUIPanel.SetActive(true);
     }
 
+    /// <summary>
+    /// Populate dropdowns with column names.
+    /// </summary>
     public void PopulateDropdowns(List<Dictionary<string, object>> pointList)
     {
         List<string> columnNames = new List<string>(pointList[0].Keys);
@@ -198,6 +213,9 @@ public class MenuManager : MonoBehaviour
         zDropdown.AddOptions(columnNames);
     }
 
+    /// <summary>
+    /// Handle Done button click.
+    /// </summary>
     public void OnDoneButtonClicked()
     {
         firstPersonController.DespawnAllInfoPanels();
@@ -253,6 +271,9 @@ public class MenuManager : MonoBehaviour
         ToggleMenu();
     }
 
+    /// <summary>
+    /// Handle button click in the menu.
+    /// </summary>
     public void ButtonClicked(Button clickedButton)
     {
         // Deselect the previously selected button by resetting its text color or other highlighted properties.
@@ -284,6 +305,9 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Get the name of the selected button.
+    /// </summary>
     public string GetSelectedButtonName()
     {
         if (selectedButton != null)
@@ -298,7 +322,11 @@ public class MenuManager : MonoBehaviour
 
     #endregion
 
+    #region Question Handling
 
+    /// <summary>
+    /// Start the question loop.
+    /// </summary>
     public void StartQuestionLoop()
     {
         if (questions.Count > 0)
@@ -314,6 +342,9 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Ask the current question.
+    /// </summary>
     private void AskQuestion(string question)
     {
         questionText1.text = question;
@@ -323,17 +354,26 @@ public class MenuManager : MonoBehaviour
         questionStartTime = Time.time; // Start timing when the question is asked
     }
 
+    /// <summary>
+    /// Start the questions.
+    /// </summary>
     public void startQuestions()
     {
         StartQuestionLoop();
     }
 
+    /// <summary>
+    /// Set the player's movement speed.
+    /// </summary>
     public void SetPlayerMovementSpeed(float speed)
     {
         firstPersonController.walkSpeed = speed;
         firstPersonController.sprintSpeed = speed; // Also set sprint speed to 0 if needed
     }
 
+    /// <summary>
+    /// Handle Send Answer button click.
+    /// </summary>
     private void OnSendAnswerButtonClicked()
     {
         string currentQuestion = questions[currentQuestionIndex];
@@ -362,10 +402,16 @@ public class MenuManager : MonoBehaviour
         {
             questionBox.SetActive(false);
             GameManager.Instance.ShowNotification("All questions have been answered.");
-            sendAnswerButton.interactable = false; 
+            sendAnswerButton.interactable = false;
         }
     }
+    #endregion
 
+    #region Logging
+
+    /// <summary>
+    /// Log the duration the main panel was open.
+    /// </summary>
     private void LogMainPanelDuration()
     {
         float duration = mainPanelCloseTime - mainPanelOpenTime;
@@ -374,17 +420,21 @@ public class MenuManager : MonoBehaviour
         string currentCSV = GetCurrentCSV(); // You need to implement this method to retrieve the current CSV name
         db.LogUIDuration(currentPlotType, duration, currentCSV);
     }
+    #endregion
 
+    #region DB Methods
 
-
-    #region DB Methods 
-    // Method to start the plot timer
+    /// <summary>
+    /// Start the plot timer.
+    /// </summary>
     public void StartPlotTimer(string plotType)
     {
         plotStartTimes[plotType] = Time.time;
     }
 
-    // Method to stop the plot timer and return the elapsed time
+    /// <summary>
+    /// Stop the plot timer and return the elapsed time.
+    /// </summary>
     public float StopPlotTimer(string plotType)
     {
         if (plotStartTimes.ContainsKey(plotType))
@@ -397,6 +447,9 @@ public class MenuManager : MonoBehaviour
         return 0f;
     }
 
+    /// <summary>
+    /// Get column information for a plot type.
+    /// </summary>
     private string GetColumnInfo(string plotType)
     {
         if (plotType == "Scatterplot" || plotType == "Histogram")
@@ -412,6 +465,10 @@ public class MenuManager : MonoBehaviour
     #endregion
 
     #region DB Methods Fetching
+
+    /// <summary>
+    /// Get the current CSV name.
+    /// </summary>
     private string GetCurrentCSV()
     {
         CSVPlotter csvPlotter = GameManager.Instance.GetComponent<CSVPlotter>();
@@ -428,16 +485,22 @@ public class MenuManager : MonoBehaviour
         return "No CSV Loaded";
     }
 
-    // Method to plot data panels
+    /// <summary>
+    /// Plot data panels.
+    /// </summary>
     private void PlotDataPanels(List<string> dataPanels)
-{
-    foreach (string panel in dataPanels)
     {
-        // Implement your plotting logic here
-        // Example: db.PlotDataPanel(panel);
-        Debug.Log("Plotting data panel: " + panel);
+        foreach (string panel in dataPanels)
+        {
+            // Implement your plotting logic here
+            // Example: db.PlotDataPanel(panel);
+            Debug.Log("Plotting data panel: " + panel);
+        }
     }
-}
+
+    /// <summary>
+    /// Get the current plot type.
+    /// </summary>
     private string GetCurrentPlotType()
     {
         return GetSelectedButtonName(); // Assuming this returns the current plot type

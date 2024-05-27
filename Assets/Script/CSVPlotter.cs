@@ -1,23 +1,21 @@
+#region Unity Imports
 using UnityEngine;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
 using TMPro;
 using System.Linq;
-using static UnityEngine.GraphicsBuffer;
 using UnityEditor;
+#endregion
 
 public class CSVPlotter : MonoBehaviour
 {
     #region db Variables
-
     private DatabaseManager db;
     public string currentCSV;
-
     #endregion
 
     #region Global Variables
-
     public string columnXName;
     public string columnYName;
     public string columnZName;
@@ -43,26 +41,34 @@ public class CSVPlotter : MonoBehaviour
     public TextMeshProUGUI[] yPlotTexts;
     public TextMeshProUGUI[] zPlotTexts;
 
-    //LineGraph
+    // LineGraph
     public TMP_Dropdown lineGraphSelectedColumn;
     public TextMeshProUGUI feedbackText;
     public List<string> selectedColumns = new List<string>(); // This now becomes global
 
-    //Colour Picker Scatterplot
+    // Colour Picker Scatterplot
     public Color pointColor = Color.white;
 
-    //Self explained
+    // Self explained
     public Color histogramColor = Color.white;
-
     #endregion
 
-    #region Global Methods
-
+    #region Unity Methods
+    /// <summary>
+    /// Initialize the CSVPlotter.
+    /// </summary>
     private void Start()
     {
         db = GameManager.Instance.GetComponent<DatabaseManager>();
     }
+    #endregion
 
+    #region Helper Methods
+    /// <summary>
+    /// Check if a column contains numeric data.
+    /// </summary>
+    /// <param name="columnName">The name of the column.</param>
+    /// <returns>True if the column is numeric, false otherwise.</returns>
     private bool IsNumericColumn(string columnName)
     {
         foreach (var point in pointList)
@@ -78,6 +84,11 @@ public class CSVPlotter : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Find the maximum value in a column.
+    /// </summary>
+    /// <param name="columnName">The name of the column.</param>
+    /// <returns>The maximum value.</returns>
     private float FindMaxValue(string columnName)
     {
         float maxValue = float.MinValue;
@@ -99,6 +110,11 @@ public class CSVPlotter : MonoBehaviour
         return maxValue;
     }
 
+    /// <summary>
+    /// Find the minimum value in a column.
+    /// </summary>
+    /// <param name="columnName">The name of the column.</param>
+    /// <returns>The minimum value.</returns>
     private float FindMinValue(string columnName)
     {
         float minValue = float.MaxValue;
@@ -120,42 +136,9 @@ public class CSVPlotter : MonoBehaviour
         return minValue;
     }
 
-    public void SetData(List<Dictionary<string, object>> data, string csvName)
-    {
-        pointList = data;
-        currentCSV = csvName;
-        PopulateDropdowns();
-        Debug.Log("Data has been initialized in the dropdown.");
-    }
-
-    public void StopPlot(string plotType)
-    {
-        db.StopPlotTimer(plotType);
-    }
-
-    public void CalculateAllPlotPoints()
-    {
-        xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
-        yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
-        zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
-    }
-
-    public float[] CalculatePlotPoints(string columnName)
-    {
-        float maxVal = FindMaxValue(columnName);
-        float minVal = FindMinValue(columnName);
-        float[] plotPoints = new float[10]; 
-
-        float interval = (maxVal - minVal) / 9; 
-
-        for (int i = 0; i < 10; i++)
-        {
-            plotPoints[i] = minVal + interval * i;
-        }
-
-        return plotPoints; 
-    }
-
+    /// <summary>
+    /// Populate the dropdowns with column names.
+    /// </summary>
     private void PopulateDropdowns()
     {
         List<string> columnList = new List<string>(pointList[0].Keys);
@@ -178,6 +161,9 @@ public class CSVPlotter : MonoBehaviour
         histogramZDropdown.AddOptions(numericColumns);
     }
 
+    /// <summary>
+    /// Update the plot point texts.
+    /// </summary>
     public void UpdatePlotPointTexts()
     {
         UpdateAxisLabels(xPlotPoints, xPlotTexts);
@@ -185,14 +171,25 @@ public class CSVPlotter : MonoBehaviour
         UpdateAxisLabels(zPlotPoints, zPlotTexts);
     }
 
+    /// <summary>
+    /// Update the axis labels.
+    /// </summary>
+    /// <param name="plotPoints">Array of plot points.</param>
+    /// <param name="plotTexts">Array of plot text UI elements.</param>
     private void UpdateAxisLabels(float[] plotPoints, TextMeshProUGUI[] plotTexts)
-{
-    for (int i = 0; i < plotPoints.Length && i < plotTexts.Length; i++)
     {
-        plotTexts[i].text = Mathf.Round(plotPoints[i]).ToString("F0"); // "F0" format specifier for no decimal points
+        for (int i = 0; i < plotPoints.Length && i < plotTexts.Length; i++)
+        {
+            plotTexts[i].text = Mathf.Round(plotPoints[i]).ToString("F0"); // "F0" format specifier for no decimal points
+        }
     }
-}
 
+    /// <summary>
+    /// Normalize data for plotting.
+    /// </summary>
+    /// <param name="data">The data dictionary.</param>
+    /// <param name="columnName">The column name.</param>
+    /// <returns>Normalized value.</returns>
     public float NormalizeData(Dictionary<string, object> data, string columnName)
     {
         float value = Convert.ToSingle(data[columnName]);
@@ -201,6 +198,11 @@ public class CSVPlotter : MonoBehaviour
         return (value - min) / (max - min);
     }
 
+    /// <summary>
+    /// Update Z-axis labels with colors and column names.
+    /// </summary>
+    /// <param name="colors">List of colors.</param>
+    /// <param name="columnNames">List of column names.</param>
     public void UpdateZAxisLabels(List<Color> colors, List<string> columnNames)
     {
         for (int i = 0; i < zPlotTexts.Length; i++)
@@ -216,9 +218,65 @@ public class CSVPlotter : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// Set the data for plotting.
+    /// </summary>
+    /// <param name="data">The data to set.</param>
+    /// <param name="csvName">The name of the CSV file.</param>
+    public void SetData(List<Dictionary<string, object>> data, string csvName)
+    {
+        pointList = data;
+        currentCSV = csvName;
+        PopulateDropdowns();
+        Debug.Log("Data has been initialized in the dropdown.");
+    }
+
+    /// <summary>
+    /// Stop the plot timer for a specific plot type.
+    /// </summary>
+    /// <param name="plotType">The type of plot.</param>
+    public void StopPlot(string plotType)
+    {
+        db.StopPlotTimer(plotType);
+    }
+
+    /// <summary>
+    /// Calculate all plot points for the current data.
+    /// </summary>
+    public void CalculateAllPlotPoints()
+    {
+        xPlotPoints = CalculatePlotPoints(dropdownX.options[dropdownX.value].text);
+        yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
+        zPlotPoints = CalculatePlotPoints(dropdownZ.options[dropdownZ.value].text);
+    }
+
+    /// <summary>
+    /// Calculate plot points for a specific column.
+    /// </summary>
+    /// <param name="columnName">The name of the column.</param>
+    /// <returns>Array of plot points.</returns>
+    public float[] CalculatePlotPoints(string columnName)
+    {
+        float maxVal = FindMaxValue(columnName);
+        float minVal = FindMinValue(columnName);
+        float[] plotPoints = new float[10];
+
+        float interval = (maxVal - minVal) / 9;
+
+        for (int i = 0; i < 10; i++)
+        {
+            plotPoints[i] = minVal + interval * i;
+        }
+
+        return plotPoints;
+    }
     #endregion
 
     #region Scatterplot
+    /// <summary>
+    /// Plot data points for a scatterplot.
+    /// </summary>
     public void PlotData()
     {
         // Clear previous points
@@ -313,6 +371,10 @@ public class CSVPlotter : MonoBehaviour
     #region Linegraph
     public GameObject[] lineGraphReferencePoints;
 
+    /// <summary>
+    /// Get the reference column for the line graph.
+    /// </summary>
+    /// <returns>The reference column name.</returns>
     private string GetReferenceColumn()
     {
         string[] possibleColumns = { "Day", "Days", "Time" };
@@ -326,6 +388,9 @@ public class CSVPlotter : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Calculate points for the line graph.
+    /// </summary>
     public void CalculateLineGraphPoints()
     {
         string referenceColumn = GetReferenceColumn();
@@ -381,6 +446,9 @@ public class CSVPlotter : MonoBehaviour
         yPlotPoints = CalculatePlotPoints(dropdownY.options[dropdownY.value].text);
     }
 
+    /// <summary>
+    /// Plot the line graph.
+    /// </summary>
     public void LineGraphPlot()
     {
         string referenceColumn = GetReferenceColumn();
@@ -521,6 +589,11 @@ public class CSVPlotter : MonoBehaviour
         UpdateZAxisLabels(nameColorMapping.Values.ToList(), nameLinePointsMapping.Keys.ToList());
     }
 
+    /// <summary>
+    /// Generate a unique color.
+    /// </summary>
+    /// <param name="usedColors">List of used colors.</param>
+    /// <returns>A unique color.</returns>
     private Color GenerateUniqueColor(List<Color> usedColors)
     {
         Color newColor;
@@ -531,6 +604,12 @@ public class CSVPlotter : MonoBehaviour
         return newColor;
     }
 
+    /// <summary>
+    /// Draw a line connecting the given points.
+    /// </summary>
+    /// <param name="points">List of points to connect.</param>
+    /// <param name="color">Color of the line.</param>
+    /// <returns>The created line GameObject.</returns>
     private GameObject DrawLine(List<Vector3> points, Color color)
     {
         GameObject line = new GameObject("Line");
@@ -548,7 +627,9 @@ public class CSVPlotter : MonoBehaviour
         return line;
     }
 
-
+    /// <summary>
+    /// Add the selected column to the list of selected columns for the line graph.
+    /// </summary>
     public void AddSelectedColumn()
     {
         string selectedColumn = lineGraphSelectedColumn.options[lineGraphSelectedColumn.value].text;
@@ -570,10 +651,13 @@ public class CSVPlotter : MonoBehaviour
 
     #region Histogram
     public TMP_Dropdown histogramXDropdown, histogramZDropdown;
-    public int numberOfBins = 10; 
+    public int numberOfBins = 10;
     public GameObject plotParent;
     private int[,] bins;
 
+    /// <summary>
+    /// Generate a histogram from the current data.
+    /// </summary>
     public void GenerateHistogram()
     {
         db.StartPlotTimer("Histogram", currentCSV);
@@ -656,6 +740,9 @@ public class CSVPlotter : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Calculate plot points for the histogram.
+    /// </summary>
     public void CalculateHistogramPlotPoints()
     {
         string xColumn = histogramXDropdown.options[histogramXDropdown.value].text;
@@ -667,14 +754,18 @@ public class CSVPlotter : MonoBehaviour
         // Update UI elements or other related components
         UpdateAxisLabels(xPlotPoints, xPlotTexts);
         UpdateAxisLabels(zPlotPoints, zPlotTexts);
-
     }
 
+    /// <summary>
+    /// Calculate plot points for a histogram axis.
+    /// </summary>
+    /// <param name="columnName">The name of the column.</param>
+    /// <returns>Array of plot points.</returns>
     private float[] CalculateHistogramAxisPoints(string columnName)
     {
         float maxVal = FindMaxValue(columnName);
         float minVal = FindMinValue(columnName);
-        float[] plotPoints = new float[10];  // This number can be dynamic based on UI or other settings
+        float[] plotPoints = new float[10];
 
         float interval = (maxVal - minVal) / 9; // Calculate 10 intervals (for 10 points)
 
@@ -686,6 +777,9 @@ public class CSVPlotter : MonoBehaviour
         return plotPoints;
     }
 
+    /// <summary>
+    /// Calculate Y-axis points for the histogram.
+    /// </summary>
     private void CalculateHistogramYAxisPoints()
     {
         // Assuming bins[] has been filled and exists at this scope level
@@ -700,6 +794,10 @@ public class CSVPlotter : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Update Y-axis labels for the histogram.
+    /// </summary>
+    /// <param name="maxCount">The maximum count in the histogram bins.</param>
     private void UpdateHistogramYAxisLabels(int maxCount)
     {
         float interval = maxCount / 10.0f; // Divide the max count by 10 to find interval steps for labels
@@ -710,11 +808,10 @@ public class CSVPlotter : MonoBehaviour
             yPlotTexts[i].text = $"{(i + 1) * interval:N0}";  // Format as integer (no decimal points)
         }
     }
+    #endregion
 }
-#endregion
 
 #if UNITY_EDITOR
-
 [CustomEditor(typeof(CSVPlotter)), InitializeOnLoadAttribute]
 public class CSVPlotterEditor : Editor
 {
@@ -737,19 +834,15 @@ public class CSVPlotterEditor : Editor
         EditorGUILayout.Space();
 
         #region CSV Setup
-
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Label("CSV Setup", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
         EditorGUILayout.Space();
 
         csvPlotter.currentCSV = EditorGUILayout.TextField(new GUIContent("Current CSV", "Name of the currently loaded CSV file."), csvPlotter.currentCSV);
-
         EditorGUILayout.Space();
-
         #endregion
 
         #region Global Settings
-
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Label("Global Settings", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
         EditorGUILayout.Space();
@@ -759,13 +852,10 @@ public class CSVPlotterEditor : Editor
 
         csvPlotter.PointPrefab = (GameObject)EditorGUILayout.ObjectField(new GUIContent("Point Prefab", "Prefab for the points."), csvPlotter.PointPrefab, typeof(GameObject), false);
         csvPlotter.PointHolder = (GameObject)EditorGUILayout.ObjectField(new GUIContent("Point Holder", "Holder for the points."), csvPlotter.PointHolder, typeof(GameObject), true);
-
         EditorGUILayout.Space();
-
         #endregion
 
         #region Dropdowns Setup
-
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Label("Dropdowns Setup", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
         EditorGUILayout.Space();
@@ -776,13 +866,10 @@ public class CSVPlotterEditor : Editor
         csvPlotter.lineGraphSelectedColumn = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Line Graph Selected Column", "Dropdown for selecting columns for line graph."), csvPlotter.lineGraphSelectedColumn, typeof(TMP_Dropdown), true);
         csvPlotter.histogramXDropdown = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Histogram X Dropdown", "Dropdown for X-axis in histogram."), csvPlotter.histogramXDropdown, typeof(TMP_Dropdown), true);
         csvPlotter.histogramZDropdown = (TMP_Dropdown)EditorGUILayout.ObjectField(new GUIContent("Histogram Z Dropdown", "Dropdown for Z-axis in histogram."), csvPlotter.histogramZDropdown, typeof(TMP_Dropdown), true);
-
         EditorGUILayout.Space();
-
         #endregion
 
         #region Plot Texts
-
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Label("Plot Texts", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
         EditorGUILayout.Space();
@@ -793,13 +880,10 @@ public class CSVPlotterEditor : Editor
         EditorGUILayout.PropertyField(yPlotTexts, new GUIContent("Y Plot Texts", "Text labels for Y-axis."), true);
         SerializedProperty zPlotTexts = serializedCSVPlotter.FindProperty("zPlotTexts");
         EditorGUILayout.PropertyField(zPlotTexts, new GUIContent("Z Plot Texts", "Text labels for Z-axis."), true);
-
         EditorGUILayout.Space();
-
         #endregion
 
         #region Line Graph Settings
-
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Label("Line Graph Settings", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
         EditorGUILayout.Space();
@@ -808,9 +892,7 @@ public class CSVPlotterEditor : Editor
 
         SerializedProperty selectedColumns = serializedCSVPlotter.FindProperty("selectedColumns");
         EditorGUILayout.PropertyField(selectedColumns, new GUIContent("Selected Columns", "List of selected columns for the line graph."), true);
-
         EditorGUILayout.Space();
-
         #endregion
 
         // Additional sections (Histogram, etc.) can be added similarly
@@ -824,9 +906,3 @@ public class CSVPlotterEditor : Editor
     }
 }
 #endif
-
-
-
-
-
-

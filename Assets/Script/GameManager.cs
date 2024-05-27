@@ -5,7 +5,6 @@ using TMPro;
 using UnityEngine;
 #endregion
 
-
 public class GameManager : MonoBehaviour
 {
     #region Global Variables
@@ -17,6 +16,10 @@ public class GameManager : MonoBehaviour
     public GameObject notificationPrefab;
     public Canvas uiCanvas; // Assign your Canvas in the Inspector
 
+    /// <summary>
+    /// Show a notification on the UI.
+    /// </summary>
+    /// <param name="message">The message to display.</param>
     public void ShowNotification(string message)
     {
         // Instantiate the prefab
@@ -50,6 +53,11 @@ public class GameManager : MonoBehaviour
     #region Audio
     private AudioSource audioSource;
 
+    /// <summary>
+    /// Play a sound effect.
+    /// </summary>
+    /// <param name="soundName">The name of the sound to play.</param>
+    /// <param name="volume">The volume at which to play the sound.</param>
     public void PlaySound(string soundName, float volume = 1f)
     {
         // Load the audio clip from the "Sounds" folder
@@ -66,11 +74,10 @@ public class GameManager : MonoBehaviour
     }
     #endregion
 
-
     #region Singleton
     public static GameManager Instance { get; private set; }
 
-    void Awake()
+    private void Awake()
     {
         if (Instance != null && Instance != this)
         {
@@ -93,22 +100,29 @@ public class GameManager : MonoBehaviour
         }
 
         ShowNotification("Welcome! Press ESC to start.");
-
-
     }
     #endregion
 
-    // Method to store CSV data
+    #region CSV Data Handling
+
+    /// <summary>
+    /// Store CSV data.
+    /// </summary>
+    /// <param name="data">The data to store.</param>
     public void StoreCSVData(List<Dictionary<string, object>> data)
     {
         csvData = data;
         IsCSVUploaded = true;
     }
 
-    // Method to retrieve CSV data
+    /// <summary>
+    /// Retrieve CSV data.
+    /// </summary>
+    /// <returns>A list of dictionaries containing the CSV data.</returns>
     public List<Dictionary<string, object>> GetCSVData()
     {
         return csvData;
     }
 
+    #endregion
 }
