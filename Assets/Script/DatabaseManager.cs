@@ -13,7 +13,6 @@ public class DatabaseManager : MonoBehaviour
     #region User Data Variables
     private Dictionary<string, float> plotStartTimes = new Dictionary<string, float>();
     private Dictionary<string, string> currentCSVFiles = new Dictionary<string, string>();
-    private Dictionary<string, int> plotCounts = new Dictionary<string, int>();
     private string activePlotType;
     private List<string> clickedDatapoints = new List<string>();
 
@@ -22,6 +21,7 @@ public class DatabaseManager : MonoBehaviour
 
     #region DB Variables
     private int plotCount = 0;
+    private Dictionary<string, int> plotCounts = new Dictionary<string, int>();
     public int playCount = 0;
     private int logCount;
     private Dictionary<string, int> logsCounter = new Dictionary<string, int>();
@@ -86,24 +86,24 @@ public class DatabaseManager : MonoBehaviour
             return;
         }
 
-        if (activePlotType != plotType)
+        if (!plotStartTimes.ContainsKey(plotType))
         {
-            if (activePlotType != null && plotStartTimes.ContainsKey(activePlotType))
-            {
-                StopPlotTimer(activePlotType);
-            }
-
             plotStartTimes[plotType] = Time.time;
-            if (!plotCounts.ContainsKey(plotType))
-            {
-                plotCounts[plotType] = 0;
-            }
-
-            plotCounts[plotType]++;
-            activePlotType = plotType;
         }
 
-        db.Child("Play " + playCount).Child(plotType).Child("CSVChosen").SetValueAsync(columnInfo);
+        if (!plotCounts.ContainsKey(plotType))
+        {
+            plotCounts[plotType] = 0;
+        }
+
+        plotCounts[plotType]++; // Increment plot count by 1
+
+        activePlotType = plotType;
+
+        // Use a consistent key for the plot entry
+        string plotKey = $"Plot {plotCounts[plotType]}";
+
+        db.Child("Play " + playCount).Child(plotType).Child(plotKey).Child("Column Info").SetValueAsync(columnInfo);
     }
 
     public void StopPlotTimer(string plotType)
@@ -119,9 +119,6 @@ public class DatabaseManager : MonoBehaviour
             float startTime = plotStartTimes[plotType];
             float elapsedTime = Time.time - startTime;
             plotStartTimes.Remove(plotType);
-
-            int logIndex = plotCounts.ContainsKey(plotType) ? plotCounts[plotType] : 1;
-            db.Child("Play " + playCount).Child(plotType).Child("Plot " + logIndex).Child("PlottingDuration").SetValueAsync(elapsedTime);
         }
     }
 
@@ -193,6 +190,20 @@ public class DatabaseManager : MonoBehaviour
         int logIndex = plotCounts.ContainsKey(plotType) ? plotCounts[plotType] : 1;
         db.Child("Play " + playCount).Child(plotType).Child("Plot " + logIndex).Child("UI Logs").Child("PlottingDuration").SetValueAsync(duration);
         db.Child("Play " + playCount).Child(plotType).Child("Plot " + logIndex).Child("UI Logs").Child("CSVChosen").SetValueAsync(csvName);
+    }
+
+    public int GetPlotCount(string plotType)
+    {
+        if (plotCounts.ContainsKey(plotType))
+        {
+            return plotCounts[plotType];
+        }
+        return 0;
+    }
+
+    public void SetPlotCount(string plotType, int count)
+    {
+        plotCounts[plotType] = count;
     }
 
 #if UNITY_EDITOR

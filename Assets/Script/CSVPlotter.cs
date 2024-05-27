@@ -7,11 +7,6 @@ using System.Linq;
 using static UnityEngine.GraphicsBuffer;
 using UnityEditor;
 
-using UnityEditor;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-
 public class CSVPlotter : MonoBehaviour
 {
     #region db Variables
@@ -206,13 +201,13 @@ public class CSVPlotter : MonoBehaviour
         return (value - min) / (max - min);
     }
 
-    public void UpdateZAxisLabels(List<Color> colors)
+    public void UpdateZAxisLabels(List<Color> colors, List<string> columnNames)
     {
         for (int i = 0; i < zPlotTexts.Length; i++)
         {
-            if (i < selectedColumns.Count)
+            if (i < columnNames.Count)
             {
-                zPlotTexts[i].text = selectedColumns[i];
+                zPlotTexts[i].text = columnNames[i];
                 zPlotTexts[i].color = colors[i]; // Set the text color
             }
             else
@@ -232,7 +227,9 @@ public class CSVPlotter : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        db.StartPlotTimer("Scatterplot", currentCSV);
+        // Gather column info
+        string columnInfo = $"X: {dropdownX.options[dropdownX.value].text}, Y: {dropdownY.options[dropdownY.value].text}, Z: {dropdownZ.options[dropdownZ.value].text}";
+        db.StartPlotTimer("Scatterplot", columnInfo);
 
         // Set tag for PointHolder
         PointHolder.transform.tag = "Scatterplot";
@@ -521,7 +518,7 @@ public class CSVPlotter : MonoBehaviour
             Debug.Log($"Drawn line for {nameLinePoints.Key} with color {nameColorMapping[nameLinePoints.Key]}");
         }
 
-        UpdateZAxisLabels(nameColorMapping.Values.ToList());
+        UpdateZAxisLabels(nameColorMapping.Values.ToList(), nameLinePointsMapping.Keys.ToList());
     }
 
     private Color GenerateUniqueColor(List<Color> usedColors)

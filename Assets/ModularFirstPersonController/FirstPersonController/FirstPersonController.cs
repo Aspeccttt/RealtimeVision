@@ -1129,7 +1129,7 @@ public class FirstPersonController : MonoBehaviour
             fpc.infoPanelDistance = EditorGUILayout.FloatField(new GUIContent("Info Panel Distance", "Distance from the camera to show the info panel."), fpc.infoPanelDistance);
             fpc.interactableLayer = EditorGUILayout.LayerField(new GUIContent("Interactable Layer", "Layer your data points are on."), fpc.interactableLayer);
             fpc.dragAnchor = (Transform)EditorGUILayout.ObjectField(new GUIContent("Drag Anchor", "Parent transform."), fpc.dragAnchor, typeof(Transform), true);
-            #endregion
+            #endregion````````````````````````````````````````````````````
 
             //Sets any changes from the prefab
             if (GUI.changed)

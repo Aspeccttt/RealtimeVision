@@ -204,10 +204,8 @@ public class MenuManager : MonoBehaviour
         string plotType = GetSelectedButtonName();
         string columnInfo = GetColumnInfo(plotType);
 
-        if (!db.IsPlotTimerRunning(plotType))
-        {
-            db.StartPlotTimer(plotType, columnInfo);
-        }
+        // Start the plot timer and increment the plot count
+        db.StartPlotTimer(plotType, columnInfo);
 
         if (plotType == "Linegraph")
         {
