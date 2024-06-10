@@ -76,7 +76,7 @@ The Unity 3D-based data visualisation prototype enables users to upload and inte
 5. View real-time updates and engage with the data.
 
 ### Contributing
-Contributions are welcome! Please fork this repository and submit pull requests with enhancements and bug fixes.
+Contributions are welcome! Please make sure to cite the author in the studies!
 
 ### Contact
 Please contact at ilariocutajar@gmail.com for any questions or inquiries.
