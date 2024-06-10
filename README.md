@@ -77,4 +77,4 @@ The Unity 3D-based data visualisation prototype enables users to upload and inte
 Contributions are welcome! Please fork this repository and submit pull requests with enhancements and bug fixes.
 
 ### Contact
-Please contact Ilario Cutajar at [your-email@example.com] for any questions or inquiries.
+Please contact at ilariocutajar@gmail.com for any questions or inquiries.
