@@ -66,15 +66,15 @@ The Unity 3D-based data visualisation prototype enables users to upload and inte
 - Update the DatabaseManager.cs script with your Firebase credentials.
 4. Build and run the project in Unity.
 
-###Usage
+### Usage
 1. Launch the application.
 2. Use the "Upload CSV" button to select and upload a CSV file.
 3. Choose the desired columns for visualisation.
 4. Interact with the 3D visualisation using the provided controls.
 5. View real-time updates and engage with the data.
 
-###Contributing
+### Contributing
 Contributions are welcome! Please fork this repository and submit pull requests with enhancements and bug fixes.
 
-###Contact
+### Contact
 Please contact Ilario Cutajar at [your-email@example.com] for any questions or inquiries.
