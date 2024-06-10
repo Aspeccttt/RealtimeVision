@@ -1,5 +1,7 @@
 # Data Visualisation in Unity 3D
 
+![Scatterplot using the GPU dataset](https://github.com/Aspeccttt/RealtimeVision/blob/main/Scatterplot%20using%20the%20GPU%20dataset.png?raw=true)
+
 ## Overview
 
 This repository contains the Unity 3D prototype developed as part of the thesis "Data Visualisation in Unity 3D" by Ilario Cutajar. The project aims to enhance data visualisation techniques by leveraging Unity 3D to create immersive, interactive, and accessible visual representations of complex datasets. This document provides an overview of the thesis, the research methodology, and instructions on how to set up and use the prototype.
